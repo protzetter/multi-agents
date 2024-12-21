@@ -1,2 +1,26 @@
 multi-agents.code-workspace
 .env
+.DS_Store
+.cache/41/cache.db
+chainlit.md
+.chainlit/translations/bn.json
+.chainlit/translations/en-US.json
+.chainlit/translations/gu.json
+.chainlit/translations/he-IL.json
+.chainlit/translations/hi.json
+.chainlit/translations/kn.json
+.chainlit/translations/ml.json
+.chainlit/translations/mr.json
+.chainlit/translations/ta.json
+.chainlit/translations/te.json
+.chainlit/translations/zh-CN.json
+.chainlit/config.toml
+__pycache__/multi agent banking onboarding cl.cpython-312.pyc
+__pycache__/multi agent banking onboarding.cpython-312.pyc
+docs/MiFID_test_retail_EN.pdf
+docs/Questionnaire-for-assessing-client-sustainability-preferences.pdf
+tmp/chromadb/chroma.sqlite3
+tmp/chromadb/b2621e64-3411-4f6c-a859-301aa6488371/data_level0.bin
+tmp/chromadb/b2621e64-3411-4f6c-a859-301aa6488371/header.bin
+tmp/chromadb/b2621e64-3411-4f6c-a859-301aa6488371/length.bin
+tmp/chromadb/b2621e64-3411-4f6c-a859-301aa6488371/link_lists.bin
