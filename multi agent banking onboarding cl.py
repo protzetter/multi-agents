@@ -1,8 +1,13 @@
 import asyncio
 import sys
 import os
-from dotenv import load_dotenv
 import uuid
+from dotenv import load_dotenv
+import logging
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
 key= os.getenv('ANTHROPIC_API_KEY')
@@ -10,17 +15,102 @@ key= os.getenv('ANTHROPIC_API_KEY')
 
 from multi_agent_orchestrator.classifiers import AnthropicClassifier, AnthropicClassifierOptions
 from multi_agent_orchestrator.orchestrator import MultiAgentOrchestrator
-from multi_agent_orchestrator.agents import AnthropicAgent, AnthropicAgentOptions
+from multi_agent_orchestrator.agents import AnthropicAgent, AnthropicAgentOptions, AgentResponse
 
-from typing import Union, AsyncIterable, Optional, Dict, List
+from typing import List, Tuple, Optional, Collection
 from multi_agent_orchestrator.types import ConversationMessage
+
+
+
+#initialize chroma vector DB variables
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+import chromadb
+from chromadb.config import Settings
+
+def load_and_split_document(collection:Collection, file_path, chunk_size=1000, chunk_overlap=200):
+    """
+    Load a document, split it into chunks, and store in ChromaDB
+    
+    Args:
+        file_path (str): Path to your document
+        chunk_size (int): Size of text chunks
+        chunk_overlap (int): Overlap between chunks
+    """
+    
+    # Load the document
+
+    loader = PyPDFLoader(file_path)
+    documents = loader.load()
+    
+    # Split the text into chunks
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=len,
+        separators=["\n\n", "\n", " ", ""]
+    )
+    chunks = text_splitter.split_documents(documents)
+    
+   
+    # Prepare documents for ChromaDB
+    documents = []
+    metadatas = []
+    ids = []
+    
+    for i, chunk in enumerate(chunks):
+        documents.append(chunk.page_content)
+        metadatas.append(chunk.metadata)
+        ids.append(f"doc_{i}")
+    
+    # 6. Add documents to collection
+    collection.add(
+        documents=documents,
+        metadatas=metadatas,
+        ids=ids
+    )
+
+    
+    return len(chunks)
+
+
+def get_or_create_collection(
+    client: chromadb.Client,
+    collection_name: str,
+    metadata: Optional[dict] = None
+) -> Tuple[Collection, bool]:
+    """
+    Get existing collection or create a new one if it doesn't exist
+    
+    Args:
+        client: ChromaDB client instance
+        collection_name: Name of the collection
+        metadata: Optional metadata for the collection
+        
+    Returns:
+        Tuple[Collection, bool]: (collection, created) where created is True if new collection
+    """
+    try:
+        # Try to get existing collection
+        collection = client.get_collection(name=collection_name)
+        logger.info(f"Retrieved existing collection: {collection_name}")
+        return collection, False
+    except Exception as e:
+        logger.info(f"Collection {collection_name} not found, creating new one")
+        # Create new collection if it doesn't exist
+        collection = client.create_collection(
+            name=collection_name,
+            metadata=metadata or {"hnsw:space": "cosine"}
+        )
+        return collection, True
+    
 
 
 def create_relationship_agent(model:str,key:str):
     return AnthropicAgent(AnthropicAgentOptions(
         name="Relationship Agent",
         description="You are a banking onboarding agent and you need to get the required information from a customer that wants to open an account"
-                    " You need to get his first name, hist last name, his address, his birth date, his nationality, his residence permit."
+                    " You need to get first name, last name, address, birth date, nationality, residence permit."
                     "Once you have all the information required you need to ask the regulator agent to review the information for completeness"
                     "Ask until you have all customer information. Once you have the information please reply TERMINATE",
         model_id=model,
@@ -67,9 +157,9 @@ custom_anthropic_classifier = AnthropicClassifier(AnthropicClassifierOptions(
 from multi_agent_orchestrator.storage import InMemoryChatStorage
 
 
-memory_storage = InMemoryChatStorage()
+#memory_storage = InMemoryChatStorage()
 #Initialize the orchestrator
-orchestrator = MultiAgentOrchestrator(classifier=custom_anthropic_classifier, storage=memory_storage)
+orchestrator = MultiAgentOrchestrator(classifier=custom_anthropic_classifier) #, storage=memory_storage)
 
 from multi_agent_orchestrator.agents import ChainAgent, ChainAgentOptions
 # create the chain agent
@@ -84,8 +174,8 @@ orchestrator.add_agent(chain_agent)
 orchestrator.set_default_agent('Onboarding Agent')
  """
 #Add agents to the orchestrator
-orchestrator.add_agent(create_relationship_agent("claude-3-5-sonnet-latest", key))
-orchestrator.add_agent(create_regulator_agent("claude-3-5-sonnet-latest", key))
+orchestrator.add_agent(rel_agent)
+orchestrator.add_agent(reg_agent)
 
 orchestrator.set_default_agent("Relationship Agent")
 
@@ -94,6 +184,16 @@ import chainlit as cl
 
 @cl.on_chat_start
 async def main():
+    print("A new chat session has started!")
+    [collection, created]= get_or_create_collection(client=chromadb.PersistentClient(path='./chromadb'), collection_name="ubs-research")
+    if created:
+        print("Collection created successfully.")
+        file_path = "01_UBS_YA2025_global_fr.pdf"  # Update with your file path
+        num_chunks = load_and_split_document(collection, file_path)
+        print(f"Document split into {num_chunks} chunks and loaded into ChromaDB")
+    else:
+        print("Collection loaded successfully.")
+
     cl.user_session.set("user_id", str(uuid.uuid4()))
     cl.user_session.set("session_id", str(uuid.uuid4()))
     cl.user_session.set("chat_history", [])
@@ -114,12 +214,13 @@ async def main(message: cl.Message):
     response= asyncio.run(handle_request(orchestrator, user_input, user_id, session_id, chat_history))
  #   chat_history.append({"role": "user", "content": user_input})
  #   chat_history.append({"role": "assistant", "content": response.output})
-    chat_history.append(response.output)
-    cl.user_session.set("chat_history", chat_history)
+#    chat_history.append(response.output)
+#    cl.user_session.set("chat_history", chat_history)
     #check if response includes the word TERMINATE
     if 'TERMINATE' in response.output.content[0]['text']:
+        print('terminating')
         response = asyncio.run(reg_agent.process_request(user_input, user_id, session_id, chat_history))
-        print(response.output.content[0]['text'])
+        print(response.content)
         await cl.Message(
             content=response.content[0]['text'],
         ).send()

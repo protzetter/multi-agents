@@ -1,8 +1,9 @@
 import os
+import asyncio
 from dotenv import load_dotenv
 from autogen.agentchat.contrib.retrieve_assistant_agent import AssistantAgent
 from autogen.agentchat.contrib.retrieve_user_proxy_agent import RetrieveUserProxyAgent
-
+from autogen import ConversableAgent
 
 load_dotenv()
 
@@ -21,7 +22,7 @@ llm_config = {
     "temperature": 0
 }
 
-customer_proxy_agent = autogen.ConversableAgent(
+customer_proxy_agent = ConversableAgent(
     name="customer_proxy_agent",
     llm_config=False,
     code_execution_config=False,
@@ -30,11 +31,12 @@ customer_proxy_agent = autogen.ConversableAgent(
 )
 
 
-onboarding_agent = autogen.ConversableAgent(
+onboarding_agent = ConversableAgent(
     name="onboarding_coordinator_agent",
     system_message="You are a banking onboarding coordinator agent and you need to get the required information from a customer that wants to open an account"
                     " You need to get his firstt name, his last name, his address, his birth date, his nationality, his residence permit."
-                    "Once you have all the information required please reply terminate",
+                    "Once you have all the information required please summarize and ask for confirmation. "
+                    "Reply terminated when the customer has confirmed the information is complete and accurate",
     llm_config=llm_config,
     human_input_mode="NEVER",
     code_execution_config=False
