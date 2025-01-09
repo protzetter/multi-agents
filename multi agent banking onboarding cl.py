@@ -22,89 +22,14 @@ from multi_agent_orchestrator.types import ConversationMessage
 
 
 
-#initialize chroma vector DB variables
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-import chromadb
-from chromadb.config import Settings
-
-def load_and_split_document(collection:Collection, file_path, chunk_size=1000, chunk_overlap=200):
-    """
-    Load a document, split it into chunks, and store in ChromaDB
-    
-    Args:
-        file_path (str): Path to your document
-        chunk_size (int): Size of text chunks
-        chunk_overlap (int): Overlap between chunks
-    """
-    
-    # Load the document
-
-    loader = PyPDFLoader(file_path)
-    documents = loader.load()
-    
-    # Split the text into chunks
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        length_function=len,
-        separators=["\n\n", "\n", " ", ""]
-    )
-    chunks = text_splitter.split_documents(documents)
-    
-   
-    # Prepare documents for ChromaDB
-    documents = []
-    metadatas = []
-    ids = []
-    
-    for i, chunk in enumerate(chunks):
-        documents.append(chunk.page_content)
-        metadatas.append(chunk.metadata)
-        ids.append(f"doc_{i}")
-    
-    # 6. Add documents to collection
-    collection.add(
-        documents=documents,
-        metadatas=metadatas,
-        ids=ids
-    )
-
-    
-    return len(chunks)
-
-
-def get_or_create_collection(
-    client: chromadb.Client,
-    collection_name: str,
-    metadata: Optional[dict] = None
-) -> Tuple[Collection, bool]:
-    """
-    Get existing collection or create a new one if it doesn't exist
-    
-    Args:
-        client: ChromaDB client instance
-        collection_name: Name of the collection
-        metadata: Optional metadata for the collection
-        
-    Returns:
-        Tuple[Collection, bool]: (collection, created) where created is True if new collection
-    """
-    try:
-        # Try to get existing collection
-        collection = client.get_collection(name=collection_name)
-        logger.info(f"Retrieved existing collection: {collection_name}")
-        return collection, False
-    except Exception as e:
-        logger.info(f"Collection {collection_name} not found, creating new one")
-        # Create new collection if it doesn't exist
-        collection = client.create_collection(
-            name=collection_name,
-            metadata=metadata or {"hnsw:space": "cosine"}
-        )
-        return collection, True
-    
-
+#import  chroma retriever
+from chroma_retriever import ChromaDBRetriever, ChromaDBRetrieverOptions
+options = ChromaDBRetrieverOptions(
+        persist_directory= './chromadb',
+        collection_name='ubs-research',
+        n_results= 5,
+        similarity_threshold= 0.6
+)
 
 def create_relationship_agent(model:str,key:str):
     return AnthropicAgent(AnthropicAgentOptions(
@@ -130,7 +55,16 @@ def create_regulator_agent(model:str, key:str):
     ))
 
 
-
+def create_investment_agent(model:str, key:str):
+    return AnthropicAgent(AnthropicAgentOptions(
+        name="Investment research agent",
+        description="My investment reserach  agent is responsible for giving information about investment research, providing latest research on equities, bonds and other investment assets."
+                    "Answer the question based only on the context provided.",
+        streaming=False,
+        model_id=model,
+        api_key=key,
+        retriever=ChromaDBRetriever(options)
+    ))
 
 async def handle_request(_orchestrator: MultiAgentOrchestrator, _user_input: str, _user_id: str, _session_id: str, chat_history: List[ConversationMessage]):
     response: AgentResponse = await _orchestrator.route_request(_user_input, _user_id, _session_id,chat_history)
@@ -165,6 +99,7 @@ from multi_agent_orchestrator.agents import ChainAgent, ChainAgentOptions
 # create the chain agent
 rel_agent = create_relationship_agent("claude-3-5-sonnet-latest", key)
 reg_agent = create_regulator_agent("claude-3-5-sonnet-latest", key)
+investment_agent= create_investment_agent("claude-3-5-sonnet-latest", key)
 """ chain_agent = ChainAgent(ChainAgentOptions(
     name='Onboarding Agent',
     description='A chain agent responsible to gether customer information to open a bank account, it includes also a regulator agent',
@@ -175,7 +110,7 @@ orchestrator.set_default_agent('Onboarding Agent')
  """
 #Add agents to the orchestrator
 orchestrator.add_agent(rel_agent)
-orchestrator.add_agent(reg_agent)
+orchestrator.add_agent(investment_agent)
 
 orchestrator.set_default_agent("Relationship Agent")
 
@@ -185,15 +120,6 @@ import chainlit as cl
 @cl.on_chat_start
 async def main():
     print("A new chat session has started!")
-    [collection, created]= get_or_create_collection(client=chromadb.PersistentClient(path='./chromadb'), collection_name="ubs-research")
-    if created:
-        print("Collection created successfully.")
-        file_path = "01_UBS_YA2025_global_fr.pdf"  # Update with your file path
-        num_chunks = load_and_split_document(collection, file_path)
-        print(f"Document split into {num_chunks} chunks and loaded into ChromaDB")
-    else:
-        print("Collection loaded successfully.")
-
     cl.user_session.set("user_id", str(uuid.uuid4()))
     cl.user_session.set("session_id", str(uuid.uuid4()))
     cl.user_session.set("chat_history", [])
