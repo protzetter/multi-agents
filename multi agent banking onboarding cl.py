@@ -28,7 +28,7 @@ options = ChromaDBRetrieverOptions(
         persist_directory= './chromadb',
         collection_name='ubs-research',
         n_results= 5,
-        similarity_threshold= 0.6
+        similarity_threshold= 0.3
 )
 
 def create_relationship_agent(model:str,key:str):
@@ -102,7 +102,7 @@ reg_agent = create_regulator_agent("claude-3-5-sonnet-latest", key)
 investment_agent= create_investment_agent("claude-3-5-sonnet-latest", key)
 """ chain_agent = ChainAgent(ChainAgentOptions(
     name='Onboarding Agent',
-    description='A chain agent responsible to gether customer information to open a bank account, it includes also a regulator agent',
+    description='A chain agent responsible to gather customer information to open a bank account, it includes also a regulator agent',
     agents=[rel_agent, reg_agent]
 ))
 orchestrator.add_agent(chain_agent)
