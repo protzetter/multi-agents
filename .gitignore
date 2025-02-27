@@ -33,3 +33,8 @@ chromadb/887d8ba3-ab81-4b79-8766-3dc938a611d0/length.bin
 chromadb/887d8ba3-ab81-4b79-8766-3dc938a611d0/link_lists.bin
 my_chroma_db/chroma.sqlite3
 __pycache__/autogen banking onboarding cl copy.cpython-312.pyc
+devfile.yaml
+.chainlit/translations/ja.json
+.gitignore
+.chainlit/translations/nl-NL.json
+__pycache__/pdf_passport_detector.cpython-312.pyc
