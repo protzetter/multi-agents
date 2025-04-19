@@ -89,12 +89,12 @@ def main():
     [collection, created]= get_or_create_collection(client=chromadb.PersistentClient(path='./chromadb'), collection_name="ubs-research")
     if created:
         print("Collection created successfully.")
-        file_path = "/Users/patrickrotzetter/Library/CloudStorage/OneDrive-Personal/Documents/dev/multi-agents/documents/Global Outlook 2025_ Plan for growth, prepare for volatility - Report OTLK-REPORT-2025.pdf"  # Update with your file path
+        file_path = "/Users/patrickrotzetter/Library/CloudStorage/OneDrive-Personal/Documents/dev/multi-agents/data/Global Outlook 2025_ Plan for growth, prepare for volatility - Report OTLK-REPORT-2025.pdf"  # Update with your file path
         num_chunks = load_and_split_document(collection, file_path)
         print(f"Document split into {num_chunks} chunks and loaded into ChromaDB")
     else:
         print("Collection loaded successfully.")
-        file_path = "/Users/patrickrotzetter/Library/CloudStorage/OneDrive-Personal/Documents/dev/multi-agents/documents/Global Outlook 2025_ Plan for growth, prepare for volatility - Report OTLK-REPORT-2025.pdf"  # Update with your file path
+        file_path = "/Users/patrickrotzetter/Library/CloudStorage/OneDrive-Personal/Documents/dev/multi-agents/data/Global Outlook 2025_ Plan for growth, prepare for volatility - Report OTLK-REPORT-2025.pdf"  # Update with your file path
         num_chunks = load_and_split_document(collection, file_path)
         print(f"Document split into {num_chunks} chunks and loaded into ChromaDB")
 if __name__ == "__main__":

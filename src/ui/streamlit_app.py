@@ -1,22 +1,41 @@
+import streamlit as st
+import boto3
 import asyncio
-import sys
-import os
 import uuid
 from dotenv import load_dotenv
+import os
 import logging
-import PyPDF2
-import io
-import streamlit as st
-from pdf_passport_detector import is_passport_with_nova, extract_passport_info
+import sys
+from typing import List
+
+# Add the project root to the path so we can import our modules
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+
+# Import document processing utilities
+from src.utils.document_processing.pdf_passport_detector_refactored import is_passport_with_nova, extract_passport_info
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-from typing import List
 
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), '../../config/.env'))
 
 key = os.getenv('ANTHROPIC_API_KEY')
+
+
+def create_bedrock_agent_client():
+    return boto3.client('bedrock-agent-runtime', region_name='us-east-1')
+
+def create_bedrock_agent():
+    try:
+        return {
+            'agent_id': 'your-agent-id',  # Replace with your Bedrock agent ID
+            'agent_alias_id': 'your-agent-alias-id'  # Replace with your agent alias ID
+        }
+    except Exception as e:
+        logger.error(f"Error creating Bedrock agent: {str(e)}")
+        return None
+
 
 from multi_agent_orchestrator.classifiers import AnthropicClassifier, AnthropicClassifierOptions
 from multi_agent_orchestrator.orchestrator import MultiAgentOrchestrator
@@ -25,9 +44,9 @@ from typing import List, Tuple, Optional, Collection
 from multi_agent_orchestrator.types import ConversationMessage
 
 # ChromaDB retriever setup
-from chroma_retriever import ChromaDBRetriever, ChromaDBRetrieverOptions
+from src.utils.db.chroma_retriever import ChromaDBRetriever, ChromaDBRetrieverOptions
 options = ChromaDBRetrieverOptions(
-    persist_directory='./chromadb',
+    persist_directory='/Users/patrickrotzetter/Library/CloudStorage/OneDrive-Personal/Documents/dev/multi-agents/chromadb',
     collection_name='ubs-research',
     n_results=5,
     similarity_threshold=0.3
@@ -116,7 +135,8 @@ custom_anthropic_classifier = AnthropicClassifier(AnthropicClassifierOptions(
 from multi_agent_orchestrator.classifiers import BedrockClassifier, BedrockClassifierOptions
 custom_bedrock_classifier = BedrockClassifier(BedrockClassifierOptions(
     region='us-east-1',
-    model_id='amazon.nova-lite-v1:0',
+ #   model_id='amazon.nova-pro-v1:0',
+    model_id='mistral.mistral-small-2402-v1:0',
     inference_config={
         'max_tokens': 500,
         'temperature': 0.7,
@@ -153,12 +173,12 @@ def main():
 
     # Initialize the orchestrator
     if st.session_state.get("orchestrator") is None:
-        st.session_state.orchestrator = MultiAgentOrchestrator(classifier=custom_bedrock_classifier)
+        st.session_state.orchestrator = MultiAgentOrchestrator(classifier=custom_anthropic_classifier)
         # add agents to the orchestrator
 #        st.session_state.orchestrator.add_agent(create_relationship_agent("claude-3-5-sonnet-latest", key))
         st.session_state.orchestrator.add_agent(create_relationship_agent_bedrock("amazon.nova-lite-v1:0"))
-        st.session_state.orchestrator.add_agent(create_regulator_agent("claude-3-5-sonnet-latest", key))
-        st.session_state.orchestrator.add_agent(create_investment_agent("claude-3-5-sonnet-latest", key))
+#        st.session_state.orchestrator.add_agent(create_regulator_agent("claude-3-5-sonnet-latest", key))
+        st.session_state.orchestrator.add_agent(create_investment_agent(model="claude-3-5-sonnet-latest", key=key))
         st.session_state.orchestrator.set_default_agent("Relationship Agent")
     # Chat interface
     st.write("Welcome to the interactive Multi Agent system. Type your message below.")
