@@ -62,3 +62,15 @@ examples/.chainlit/translations/ta.json
 examples/.chainlit/translations/te.json
 examples/.chainlit/translations/zh-CN.json
 src/utils/db/__pycache__/chroma_retriever.cpython-312.pyc
+src/agents/bedrock/__pycache__/__init__.cpython-312.pyc
+src/agents/bedrock/__pycache__/stock_info_agent.cpython-312.pyc
+src/utils/finance/__pycache__/__init__.cpython-312.pyc
+src/utils/finance/__pycache__/yahoo_finance.cpython-312.pyc
+src/agents/__pycache__/__init__.cpython-311.pyc
+.gitignore
+src/utils/finance/__init__.py
+src/agents/bedrock/__pycache__/__init__.cpython-311.pyc
+src/utils/finance/__pycache__/__init__.cpython-311.pyc
+src/utils/finance/__pycache__/yahoo_finance.cpython-311.pyc
+.gitignore
+src/agents/bedrock/__pycache__/stock_info_agent.cpython-311.pyc
