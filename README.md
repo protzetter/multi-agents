@@ -10,14 +10,16 @@ This project explores different approaches to multi-agent systems, particularly 
 - Retrieval-augmented generation (RAG)
 - Agent orchestration and communication
 - Stock information analysis and visualization
+- Simple Language Model Agents (SimpleAgents)
 
 ## Technologies Used
 
-- **LLM Frameworks**: AutoGen, Claude API, AWS Bedrock
+- **LLM Frameworks**: AutoGen, Claude API, AWS Bedrock, OpenAI
 - **Vector Databases**: ChromaDB
 - **UI**: Streamlit, Chainlit
 - **Document Processing**: PDF analysis tools
 - **Financial Data**: Yahoo Finance API
+- **Small Models**: Llama, Mistral (via llama-cpp-python)
 
 ## Getting Started
 
@@ -25,7 +27,7 @@ This project explores different approaches to multi-agent systems, particularly 
 
 - Python 3.8+
 - Required Python packages (see `requirements.txt`)
-- API keys for Claude and/or AWS Bedrock
+- API keys for Claude, OpenAI, and/or AWS Bedrock
 
 ### Installation
 
@@ -43,10 +45,13 @@ This project explores different approaches to multi-agent systems, particularly 
 3. Set up environment variables in `config/.env` file:
    ```
    ANTHROPIC_API_KEY=your_api_key
+   OPENAI_API_KEY=your_api_key
    AWS_ACCESS_KEY_ID=your_access_key
    AWS_SECRET_ACCESS_KEY=your_secret_key
    AWS_REGION=your_aws_region
    BEDROCK_MODEL_ID=your_preferred_model_id
+   HF_API_TOKEN=your_huggingface_token
+   LOCAL_MODEL_PATH=path/to/local/model.gguf
    ```
 
 ## Project Structure
@@ -62,7 +67,8 @@ multi-agents/
 │   ├── agents/          # Agent implementations
 │   │   ├── autogen/     # AutoGen-based agents
 │   │   ├── bedrock/     # AWS Bedrock-based agents
-│   │   └── claude/      # Claude API-based agents
+│   │   ├── claude/      # Claude API-based agents
+│   │   └── simpleagents/  # Simple Language Model Agents
 │   ├── ui/              # User interface implementations
 │   └── utils/           # Utility functions
 │       ├── db/          # Database utilities
@@ -129,17 +135,49 @@ comparison = agent.compare_stocks(["AAPL", "MSFT", "GOOGL"])
 print(comparison['analysis'])
 ```
 
+### Stock SimpleAgent (Simple Language Model Agent)
+
+```python
+from src.agents.simpleagents.stock_agent import StockSimpleAgent
+
+# Initialize the agent with a smaller model
+agent = StockSimpleAgent(model_provider="openai", model_name="gpt-3.5-turbo")
+
+# Get stock analysis
+analysis = agent.get_stock_analysis("AAPL")
+print(analysis)
+
+# Compare stocks
+comparison = agent.compare_stock_analysis(["AAPL", "MSFT", "GOOGL"])
+print(comparison)
+
+# Interactive mode
+while True:
+    query = input("Ask about stocks (or 'exit' to quit): ")
+    if query.lower() == "exit":
+        break
+    response = agent.process_message(query)
+    print(response)
+```
+
 ### Running the Stock Information UI
 
 ```bash
-# Run the Streamlit app
+# Run the full-featured Streamlit app
 python run_stock_app.py
+
+# Run the lightweight SimpleAgent app
+python run_simpleagent_app.py
 ```
 
 Or directly with Streamlit:
 
 ```bash
+# Full-featured app
 streamlit run src/ui/streamlit_stock_app.py
+
+# Lightweight SimpleAgent app
+streamlit run src/ui/streamlit_simpleagent_app.py
 ```
 
 ## Contributing

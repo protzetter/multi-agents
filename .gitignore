@@ -74,3 +74,5 @@ src/utils/finance/__pycache__/__init__.cpython-311.pyc
 src/utils/finance/__pycache__/yahoo_finance.cpython-311.pyc
 .gitignore
 src/agents/bedrock/__pycache__/stock_info_agent.cpython-311.pyc
+src/agents/simpleagents/__pycache__/base_agent.cpython-312.pyc
+src/agents/simpleagents/__pycache__/stock_agent.cpython-312.pyc
