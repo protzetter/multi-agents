@@ -82,21 +82,42 @@ multi-agents/
 ### Banking Onboarding Agent
 
 ```python
-from src.agents.claude.banking_onboarding import BankingOnboardingAgent
+from src.agents.claude.banking_onboarding_api import relationship_agent, regulator_agent, orchestrator
 
-# Initialize the agent
-agent = BankingOnboardingAgent()
+# Initialize user session
+user_id = "user123"
+session_id = "session456"
+chat_history = []
 
-# Run the onboarding process
-agent.start_onboarding(
-    customer_name="John Doe",
-    customer_id="12345",
-    product_type="checking_account"
-)
+# Start the onboarding process
+user_input = "I'd like to open a new bank account"
+response = await orchestrator.route_request(user_input, user_id, session_id, chat_history)
 
-# Get the results
-results = agent.get_results()
-print(f"Onboarding completed with status: {results['status']}")
+# Process the response
+print(f"Agent: {response.metadata.agent_name}")
+print(f"Response: {response.output.content[0]['text']}")
+
+# Continue the conversation until complete
+while "TERMINATE" not in response.output.content[0]['text']:
+    # Get next user input
+    user_input = input("Your response: ")
+    
+    # Add previous response to chat history
+    chat_history.append(response.output)
+    
+    # Get next response
+    response = await orchestrator.route_request(user_input, user_id, session_id, chat_history)
+    print(f"Response: {response.output.content[0]['text']}")
+
+# Once complete, have the regulator agent review the information
+if "TERMINATE" in response.output.content[0]['text']:
+    regulator_response = await regulator_agent.process_request(
+        "Please review the customer information", 
+        user_id, 
+        session_id, 
+        chat_history
+    )
+    print(f"Regulator: {regulator_response.content[0]['text']}")
 ```
 
 ### Document Validation
