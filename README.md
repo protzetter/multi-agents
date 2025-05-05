@@ -19,7 +19,7 @@ This project explores different approaches to multi-agent systems, particularly 
 - **UI**: Streamlit, Chainlit
 - **Document Processing**: PDF analysis tools
 - **Financial Data**: Yahoo Finance API
-- **Small Models**: Llama, Mistral (via llama-cpp-python)
+- **LLM Providers**: AWS Bedrock, OpenAI, Anthropic, HuggingFace
 
 ## Getting Started
 
@@ -51,7 +51,6 @@ This project explores different approaches to multi-agent systems, particularly 
    AWS_REGION=your_aws_region
    BEDROCK_MODEL_ID=your_preferred_model_id
    HF_API_TOKEN=your_huggingface_token
-   LOCAL_MODEL_PATH=path/to/local/model.gguf
    ```
 
 ## Project Structure

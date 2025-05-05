@@ -98,14 +98,6 @@ class SimpleAgent:
             except ImportError:
                 logger.error("Boto3 package not installed. Install with: pip install boto3")
                 raise
-        elif self.model_provider == "local":
-            try:
-                from llama_cpp import Llama
-                model_path = os.environ.get("LOCAL_MODEL_PATH", "models/llama-2-7b-chat.gguf")
-                self.client = Llama(model_path=model_path, n_ctx=2048)
-            except ImportError:
-                logger.error("llama-cpp-python package not installed. Install with: pip install llama-cpp-python")
-                raise
         else:
             raise ValueError(f"Unsupported model provider: {self.model_provider}")
     
@@ -274,7 +266,7 @@ class SimpleAgent:
                     if not formatted_messages:
                         formatted_messages = [{
                             "role": "user", 
-                            "content": [{"text": "Hello"}]
+                            "content": [{"type": "text", "text": "Hello"}]
                         }]
                     
                     # Prepare the request body
@@ -316,34 +308,35 @@ class SimpleAgent:
                     logger.debug(f"Response body: {json.dumps(response_body, indent=2)}")
                     
                     # Parse the response
-                    if response_body.get("content") and len(response_body["content"]) > 0:
-                        if response_body["content"][0]["type"] == "text":
-                            return {
-                                "content": response_body["content"][0]["text"],
-                                "tool_calls": None
-                            }
-                    elif response_body.get("toolUse"):
-                        # Handle tool calls
-                        tool_calls = []
-                        for tool_use in response_body["toolUse"]:
+                    content = None
+                    tool_calls = None
+                    responseContent = response_body["output"]["message"]["content"]
+                    
+                    # Check for text content first
+                    for content_item in responseContent:
+                        if content_item.get("text") is not None:
+                            content = content_item.get("text", "")
+                            logger.debug(f"Content: {content}")
+                            break
+                    
+                    # Check for tool use
+                    tool_calls = []
+                    for content_item in responseContent:
+                        if content_item.get("toolUse") is not None:
+                            tool_use = content_item["toolUse"]
                             tool_calls.append({
-                                "id": tool_use["id"],
+                                "id": tool_use.get("toolUseId", "unknown"),
                                 "function": {
-                                    "name": tool_use["name"],
-                                    "arguments": json.dumps(tool_use["input"])
+                                    "name": tool_use.get("name", ""),
+                                    "arguments": json.dumps(tool_use.get("input", {}))
                                 }
                             })
-                        
-                        return {
-                            "content": None,
-                            "tool_calls": tool_calls
-                        }
-                    
-                    # Default response if we can't parse the response
+                    logger.debug(tool_calls)   
                     return {
-                        "content": "No response generated",
-                        "tool_calls": None
+                        "content": content,
+                        "tool_calls": tool_calls
                     }
+                    
                 
                 else:
                     # Generic format
@@ -387,30 +380,6 @@ class SimpleAgent:
                         "content": content or "No response generated",
                         "tool_calls": None
                     }
-            
-            elif self.model_provider == "local":
-                # Convert messages to a format suitable for llama.cpp
-                prompt = ""
-                for msg in messages:
-                    if msg["role"] == "system":
-                        prompt += f"<|system|>\n{msg['content']}\n"
-                    elif msg["role"] == "user":
-                        prompt += f"<|user|>\n{msg['content']}\n"
-                    elif msg["role"] == "assistant":
-                        prompt += f"<|assistant|>\n{msg['content']}\n"
-                
-                prompt += "<|assistant|>\n"
-                
-                response = self.client.create_completion(
-                    prompt=prompt,
-                    max_tokens=self.max_tokens,
-                    temperature=self.temperature
-                )
-                
-                return {
-                    "content": response["choices"][0]["text"],
-                    "tool_calls": None
-                }
             
             else:
                 raise ValueError(f"Unsupported model provider: {self.model_provider}")
@@ -481,7 +450,7 @@ class SimpleAgent:
             if system_content:
                 for i, msg in enumerate(nova_messages):
                     if msg["role"] == "user":
-                        nova_messages[i]["content"] = f"<system>\n{system_content}\n</system>\n\n{msg['content']}"
+                        nova_messages[i]["content"] = f"<s>\n{system_content}\n</s>\n\n{msg['content']}"
                         break
             
             # Call the model with Nova-formatted messages
@@ -555,7 +524,7 @@ class SimpleAgent:
                 if system_content:
                     for i, msg in enumerate(nova_messages):
                         if msg["role"] == "user":
-                            nova_messages[i]["content"] = f"<system>\n{system_content}\n</system>\n\n{msg['content']}"
+                            nova_messages[i]["content"] = f"<s>\n{system_content}\n</s>\n\n{msg['content']}"
                             break
                 
                 final_response = self._call_model(nova_messages)

@@ -108,7 +108,7 @@ def main():
         model_provider = st.selectbox(
             "Model Provider",
             options=["openai", "anthropic", "bedrock", "huggingface", "local"],
-            index=0
+            index=2
         )
         
         # Model name options based on provider
@@ -126,7 +126,7 @@ def main():
         model_name = st.selectbox(
             "Model Name",
             options=model_options,
-            index=0
+            index=1
         )
         
         # Apply button
