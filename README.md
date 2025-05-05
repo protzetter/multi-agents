@@ -1,6 +1,7 @@
 # Multi-Agent Systems
 
 This repository contains implementations and experiments with multi-agent AI systems using various frameworks and models.
+![artifical intelligence agents coordinating between each other with a dark sky with stars in thebackground(1)](https://github.com/user-attachments/assets/48b063e7-7d69-4880-b59f-52fd13e85d3a)
 
 ## Project Overview
 
