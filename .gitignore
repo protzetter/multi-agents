@@ -1,78 +1,66 @@
+# IDE and editor files
 multi-agents.code-workspace
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+
+# Environment and configuration
 .env
+config/.env
+*.env
+
+# OS specific files
 .DS_Store
-.cache/41/cache.db
+Thumbs.db
+desktop.ini
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.egg-info/
+.eggs/
+*.egg
+
+# Chainlit files
+.chainlit/
 chainlit.md
-.chainlit/translations/bn.json
-.chainlit/translations/en-US.json
-.chainlit/translations/gu.json
-.chainlit/translations/he-IL.json
-.chainlit/translations/hi.json
-.chainlit/translations/kn.json
-.chainlit/translations/ml.json
-.chainlit/translations/mr.json
-.chainlit/translations/ta.json
-.chainlit/translations/te.json
-.chainlit/translations/zh-CN.json
-.chainlit/config.toml
-__pycache__/multi agent banking onboarding cl.cpython-312.pyc
-__pycache__/multi agent banking onboarding.cpython-312.pyc
-docs/MiFID_test_retail_EN.pdf
-docs/Questionnaire-for-assessing-client-sustainability-preferences.pdf
-tmp/chromadb/chroma.sqlite3
-tmp/chromadb/b2621e64-3411-4f6c-a859-301aa6488371/data_level0.bin
-tmp/chromadb/b2621e64-3411-4f6c-a859-301aa6488371/header.bin
-tmp/chromadb/b2621e64-3411-4f6c-a859-301aa6488371/length.bin
-tmp/chromadb/b2621e64-3411-4f6c-a859-301aa6488371/link_lists.bin
-__pycache__/multi agent banking onboarding cl bedrock.cpython-312.pyc
-__pycache__/chroma_retriever.cpython-312.pyc
-chromadb/chroma.sqlite3
-chromadb/887d8ba3-ab81-4b79-8766-3dc938a611d0/data_level0.bin
-chromadb/887d8ba3-ab81-4b79-8766-3dc938a611d0/header.bin
-chromadb/887d8ba3-ab81-4b79-8766-3dc938a611d0/length.bin
-chromadb/887d8ba3-ab81-4b79-8766-3dc938a611d0/link_lists.bin
-my_chroma_db/chroma.sqlite3
-__pycache__/autogen banking onboarding cl copy.cpython-312.pyc
-devfile.yaml
-.chainlit/translations/ja.json
-.gitignore
-.chainlit/translations/nl-NL.json
-__pycache__/pdf_passport_detector.cpython-312.pyc
-__pycache__/pdf_passport_detector_refactored.cpython-312.pyc
-chromadb/e7f89863-9c7d-4b1f-9ab1-23c045356ba6/data_level0.bin
-src/utils/db/__pycache__/__init__.cpython-312.pyc
-src/utils/document_processing/__pycache__/pdf_passport_detector_refactored.cpython-312.pyc
-chromadb/e7f89863-9c7d-4b1f-9ab1-23c045356ba6/header.bin
-chromadb/e7f89863-9c7d-4b1f-9ab1-23c045356ba6/length.bin
-.gitignore
-chromadb/e7f89863-9c7d-4b1f-9ab1-23c045356ba6/link_lists.bin
-examples/.chainlit/translations/bn.json
-.gitignore
-examples/.chainlit/config.toml
-examples/.chainlit/translations/en-US.json
-examples/.chainlit/translations/gu.json
-examples/.chainlit/translations/he-IL.json
-examples/.chainlit/translations/hi.json
-examples/.chainlit/translations/ja.json
-examples/.chainlit/translations/kn.json
-examples/.chainlit/translations/ml.json
-examples/.chainlit/translations/mr.json
-examples/.chainlit/translations/nl-NL.json
-examples/.chainlit/translations/ta.json
-examples/.chainlit/translations/te.json
-examples/.chainlit/translations/zh-CN.json
-src/utils/db/__pycache__/chroma_retriever.cpython-312.pyc
-src/agents/bedrock/__pycache__/__init__.cpython-312.pyc
-src/agents/bedrock/__pycache__/stock_info_agent.cpython-312.pyc
-src/utils/finance/__pycache__/__init__.cpython-312.pyc
-src/utils/finance/__pycache__/yahoo_finance.cpython-312.pyc
-src/agents/__pycache__/__init__.cpython-311.pyc
-.gitignore
-src/utils/finance/__init__.py
-src/agents/bedrock/__pycache__/__init__.cpython-311.pyc
-src/utils/finance/__pycache__/__init__.cpython-311.pyc
-src/utils/finance/__pycache__/yahoo_finance.cpython-311.pyc
-.gitignore
-src/agents/bedrock/__pycache__/stock_info_agent.cpython-311.pyc
-src/agents/simpleagents/__pycache__/base_agent.cpython-312.pyc
-src/agents/simpleagents/__pycache__/stock_agent.cpython-312.pyc
+*/.chainlit/
+
+# Database files
+*.sqlite3
+*.db
+chromadb/
+tmp/chromadb/
+my_chroma_db/
+
+# Documentation and temporary files
+docs/*.pdf
+tmp/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env/
+.venv/
+
+# Logs
+*.log
+logs/

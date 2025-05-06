@@ -147,6 +147,8 @@ async def main(message: cl.Message):
  #   chat_history.append({"role": "assistant", "content": response.output})
 #    chat_history.append(response.output)
 #    cl.user_session.set("chat_history", chat_history)
+    response = asyncio.run(orchestrator.route_request(user_input, user_id, session_id, chat_history))
+
     #check if response includes the word TERMINATE
     if 'TERMINATE' in response.output.content[0]['text']:
         print('terminating')

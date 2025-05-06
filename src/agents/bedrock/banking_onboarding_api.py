@@ -1,4 +1,3 @@
-
 from multi_agent_orchestrator.orchestrator import MultiAgentOrchestrator
 from multi_agent_orchestrator.agents import BedrockLLMAgent,BedrockLLMAgentOptions, AgentResponse, AgentCallbacks
 from multi_agent_orchestrator.agents import ChainAgent, ChainAgentOptions
@@ -7,6 +6,7 @@ from typing import Optional, List, Dict, Any
 import uuid
 import asyncio
 import chainlit as cl
+import sys
 
 # temporary_model_until_fixed='us.anthropic.claude-3-5-sonnet-20241022-v2:0'
 # custom_bedrock_classifier = BedrockClassifier(BedrockClassifierOptions(
@@ -24,8 +24,21 @@ load_dotenv()
 
 key= os.getenv('ANTHROPIC_API_KEY')
 
+# Create an orchestrator instance
+from multi_agent_orchestrator.classifiers import BedrockClassifier, BedrockClassifierOptions
 
-#orchestrator = MultiAgentOrchestrator(classifier=custom_bedrock_classifier)
+# Initialize the classifier
+classifier = BedrockClassifierOptions(
+    model_id='amazon.nova-lite-v1:0',
+    inference_config={
+        'maxTokens': 500,
+        'temperature': 0.7,
+        'topP': 0.9
+    }
+)
+
+# Create the orchestrator
+orchestrator = MultiAgentOrchestrator(classifier=BedrockClassifier(classifier))
 
 class BedrockLLMAgentCallbacks(AgentCallbacks):
     def on_llm_new_token(self, token: str) -> None:
@@ -44,8 +57,8 @@ def create_relationship_agent(model:str):
         description="You are a banking onboarding agent and you need to get the required information from a customer that wants to open an account"
                     " You need to get his first name, hist last name, his address, his birth date, his nationality, his residence permit."
                     "Once you have all the information required you need to ask the regulator agent to review the information for completeness"
-                    "Ask until you have all customer information. Please confirm with the customer that the information is complete and accurate
-                    Once you have the information please reply TERMINATE",
+                    "Ask until you have all customer information. Please confirm with the customer that the information is complete and accurate"
+                    "Once you have the information please reply TERMINATE",
         model_id=model,
         streaming=False
     ))
@@ -162,10 +175,3 @@ async def main(message: cl.Message):
         await cl.Message(
             content=response.output.content[0]['text'],
         ).send()
-
-
-
-    
-
-
-

@@ -1,0 +1,12 @@
+schemaVersion: 2.0.0
+metadata:
+  name: python-banking-onboarding
+components:
+  - name: dev
+    container:
+      image: public.ecr.aws/aws-mde/universal-image:latest
+commands:
+  - id: install
+    exec:
+      component: dev
+      commandLine: "pip install boto3 anthropic langchain chromadb pytest && python -m pytest test_*.py"

@@ -82,7 +82,7 @@ multi-agents/
 ### Banking Onboarding Agent
 
 ```python
-from src.agents.claude.banking_onboarding_api import relationship_agent, regulator_agent, orchestrator
+from src.agents.bedrock.banking_onboarding_api import relationship_agent, regulator_agent, orchestrator
 
 # Initialize user session
 user_id = "user123"
