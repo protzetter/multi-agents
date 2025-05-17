@@ -65,4 +65,3 @@ ENV/
 *.log
 logs/
 src/agents/claude/__pycache__/banking_onboarding.cpython-312.pyc
-src/agents/claude/__pycache__/banking_onboarding.cpython-312.pyc
