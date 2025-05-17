@@ -5,15 +5,10 @@ This module provides an agent that can fetch stock information from Yahoo Financ
 and use AWS Bedrock to analyze and present the information.
 """
 import os
-import sys
 import logging
 import json
 from typing import Dict, Any, List, Optional
 import boto3
-from dotenv import load_dotenv
-
-# Add the project root to the path so we can import our modules
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 
 # Import the Yahoo Finance client
 from src.utils.finance.yahoo_finance import yahoo_finance
@@ -21,9 +16,6 @@ from src.utils.finance.yahoo_finance import yahoo_finance
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Load environment variables
-load_dotenv(os.path.join(os.path.dirname(__file__), '../../../config/.env'))
 
 class StockInfoAgent:
     """

@@ -14,8 +14,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'config', '.env'))
 
 # Import necessary components
-from multi_agent_orchestrator.orchestrator import MultiAgentOrchestrator
-from multi_agent_orchestrator.classifiers import BedrockClassifier, BedrockClassifierOptions
+from agent_squad.orchestrator import AgentSquad
+from agent_squad.classifiers import BedrockClassifier, BedrockClassifierOptions
 from src.agents.bedrock.banking_onboarding_api import create_relationship_agent, create_regulator_agent
 
 async def main():
@@ -31,6 +31,7 @@ async def main():
     # Create a classifier for the orchestrator
     classifier = BedrockClassifierOptions(
         model_id=model,
+        region='us-east-1',
         inference_config={
             'maxTokens': 500,
             'temperature': 0.7,
@@ -39,7 +40,7 @@ async def main():
     )
     
     # Create the orchestrator
-    orchestrator = MultiAgentOrchestrator(classifier=BedrockClassifier(classifier))
+    orchestrator = AgentSquad(classifier=BedrockClassifier(classifier))
     
     # Create agents
     relationship_agent = create_relationship_agent(model=model)
