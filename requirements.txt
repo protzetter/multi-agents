@@ -26,3 +26,6 @@ chromadb>=0.4.0
 # Document processing
 PyPDF2>=2.0.0
 langchain>=0.0.200
+
+# agent 
+agent-squad>=1.01

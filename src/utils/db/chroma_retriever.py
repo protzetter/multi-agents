@@ -6,7 +6,7 @@ It allows for semantic search and retrieval of documents based on similarity to 
 """
 
 from dataclasses import dataclass
-from multi_agent_orchestrator.retrievers import Retriever
+from agent_squad.retrievers import Retriever
 from typing import Any, List, Dict, Optional, Union
 import chromadb
 from chromadb.config import Settings

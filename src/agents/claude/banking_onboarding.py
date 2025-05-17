@@ -4,9 +4,6 @@ import os
 import uuid
 from dotenv import load_dotenv
 import logging
-import PyPDF2
-import io
-from chainlit.input_widget import Select, Switch
 import chainlit as cl
 
 # Add the project root to the path so we can import our modules
@@ -102,12 +99,14 @@ custom_anthropic_classifier = AnthropicClassifier(AnthropicClassifierOptions(
 
 from agent_squad.storage import InMemoryChatStorage
 
-
-#memory_storage = InMemoryChatStorage()
-#Initialize the orchestrator
+# This is a multi-agent chatbot system built using Amazon Q and Chainlit
+# It includes:
+# - A relationship agent for customer onboarding
+# - A regulator agent for compliance checks
+# - An investment research agent for providing investment information
+# The system uses Claude-3 models via Amazon Bedrock and includes ChromaDB for retrieval
 orchestrator = AgentSquad(classifier=custom_anthropic_classifier) #, storage=memory_storage)
 
-from agent_squad.agents import ChainAgent, ChainAgentOptions
 # create the chain agent
 rel_agent = create_relationship_agent("claude-3-5-sonnet-latest", key)
 reg_agent = create_regulator_agent("claude-3-5-sonnet-latest", key)
@@ -143,10 +142,6 @@ async def main(message: cl.Message):
     if user_input.lower() == 'quit':
             print("Exiting the program. Goodbye!")
             sys.exit()
- #   chat_history.append({"role": "user", "content": user_input})
- #   chat_history.append({"role": "assistant", "content": response.output})
-#    chat_history.append(response.output)
-#    cl.user_session.set("chat_history", chat_history)
     response = asyncio.run(orchestrator.route_request(user_input, user_id, session_id, chat_history))
 
     #check if response includes the word TERMINATE
