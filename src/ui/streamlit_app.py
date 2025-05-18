@@ -37,11 +37,11 @@ def create_bedrock_agent():
         return None
 
 
-from multi_agent_orchestrator.classifiers import AnthropicClassifier, AnthropicClassifierOptions
-from multi_agent_orchestrator.orchestrator import MultiAgentOrchestrator
-from multi_agent_orchestrator.agents import BedrockLLMAgent,BedrockLLMAgentOptions,AnthropicAgent, AnthropicAgentOptions, AgentResponse
+from agent_squad.classifiers import AnthropicClassifier, AnthropicClassifierOptions
+from agent_squad.orchestrator import AgentSquad
+from agent_squad.agents import BedrockLLMAgent,BedrockLLMAgentOptions,AnthropicAgent, AnthropicAgentOptions, AgentResponse
 from typing import List, Tuple, Optional, Collection
-from multi_agent_orchestrator.types import ConversationMessage
+from agent_squad.types import ConversationMessage
 
 # ChromaDB retriever setup
 from src.utils.db.chroma_retriever import ChromaDBRetriever, ChromaDBRetrieverOptions
@@ -115,7 +115,7 @@ def create_investment_agent(model: str, key: str):
         logger.exception("Full traceback:") # import traceback
         return None
 
-async def handle_request(_orchestrator: MultiAgentOrchestrator, _user_input: str, _user_id: str, _session_id: str, chat_history: List[ConversationMessage]):
+async def handle_request(_orchestrator: AgentSquad, _user_input: str, _user_id: str, _session_id: str, chat_history: List[ConversationMessage]):
     response: AgentResponse = await _orchestrator.route_request(_user_input, _user_id, _session_id, chat_history)
     return response
 
@@ -132,7 +132,7 @@ custom_anthropic_classifier = AnthropicClassifier(AnthropicClassifierOptions(
 ))
 
 # initialize a custom bedrock classifier using amazon nova lite
-from multi_agent_orchestrator.classifiers import BedrockClassifier, BedrockClassifierOptions
+from agent_squad.classifiers import BedrockClassifier, BedrockClassifierOptions
 custom_bedrock_classifier = BedrockClassifier(BedrockClassifierOptions(
     region='us-east-1',
  #   model_id='amazon.nova-pro-v1:0',
@@ -147,7 +147,7 @@ custom_bedrock_classifier = BedrockClassifier(BedrockClassifierOptions(
 
 
 
-async def handle_request(_orchestrator: MultiAgentOrchestrator, _user_input: str, _user_id: str, _session_id: str, chat_history: List[ConversationMessage]):
+async def handle_request(_orchestrator: AgentSquad, _user_input: str, _user_id: str, _session_id: str, chat_history: List[ConversationMessage]):
     try:
         print(chat_history)
         response: AgentResponse = await _orchestrator.route_request(_user_input, _user_id, _session_id,chat_history)
@@ -173,7 +173,7 @@ def main():
 
     # Initialize the orchestrator
     if st.session_state.get("orchestrator") is None:
-        st.session_state.orchestrator = MultiAgentOrchestrator(classifier=custom_anthropic_classifier)
+        st.session_state.orchestrator = AgentSquad(classifier=custom_anthropic_classifier)
         # add agents to the orchestrator
 #        st.session_state.orchestrator.add_agent(create_relationship_agent("claude-3-5-sonnet-latest", key))
         st.session_state.orchestrator.add_agent(create_relationship_agent_bedrock("amazon.nova-lite-v1:0"))

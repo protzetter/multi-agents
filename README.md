@@ -15,7 +15,7 @@ This project explores different approaches to multi-agent systems, particularly 
 
 ## Technologies Used
 
-- **LLM Frameworks**: AutoGen, Claude API, AWS Bedrock, OpenAI
+- **LLM Frameworks**: Strands SDK, AutoGen, Claude API, AWS Bedrock, OpenAI
 - **Vector Databases**: ChromaDB
 - **UI**: Streamlit, Chainlit
 - **Document Processing**: PDF analysis tools
@@ -68,7 +68,8 @@ multi-agents/
 │   │   ├── autogen/     # AutoGen-based agents
 │   │   ├── bedrock/     # AWS Bedrock-based agents
 │   │   ├── claude/      # Claude API-based agents
-│   │   └── simpleagents/  # Simple Language Model Agents
+│   │   ├── simpleagents/  # Simple Language Model Agents
+│   │   └── strands/     # Strands SDK-based agents
 │   ├── ui/              # User interface implementations
 │   └── utils/           # Utility functions
 │       ├── db/          # Database utilities
@@ -78,6 +79,35 @@ multi-agents/
 ```
 
 ## Usage Examples
+
+### Strands SDK Multi-Agent System
+
+The Strands SDK implementation provides a powerful framework for building AI agents with access to tools, models, and orchestration capabilities.
+
+```bash
+# Run the Strands multi-agent Streamlit app
+python run_strands_app.py
+```
+
+Or run individual agents:
+
+```python
+from src.agents.strands.banking_onboarding_agent import orchestrate_onboarding
+from src.agents.strands.document_processing_agent import document_agent
+from src.agents.strands.stock_info_agent import stock_agent
+from src.agents.strands.rag_agent import rag_agent
+from src.agents.strands.multi_agent_orchestrator import process_with_orchestration
+
+# Use the orchestrator to route queries to specialized agents
+response = process_with_orchestration("What's the current price of AAPL stock?")
+print(f"[{response['agent']}]: {response['response']}")
+
+# Or use a specific agent directly
+response = stock_agent("Compare AAPL, MSFT, and GOOGL")
+print(response.message)
+```
+
+For more details, see the [Strands Getting Started Guide](docs/strands_getting_started.md).
 
 ### Banking Onboarding Agent
 
@@ -181,10 +211,13 @@ while True:
     print(response)
 ```
 
-### Running the Stock Information UI
+### Running the UI Applications
 
 ```bash
-# Run the full-featured Streamlit app
+# Run the Strands multi-agent app
+python run_strands_app.py
+
+# Run the full-featured stock app
 python run_stock_app.py
 
 # Run the lightweight SimpleAgent app
@@ -194,7 +227,10 @@ python run_simpleagent_app.py
 Or directly with Streamlit:
 
 ```bash
-# Full-featured app
+# Strands multi-agent app
+streamlit run src/ui/streamlit_strands_app.py
+
+# Full-featured stock app
 streamlit run src/ui/streamlit_stock_app.py
 
 # Lightweight SimpleAgent app

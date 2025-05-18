@@ -1,0 +1,19 @@
+# Strands SDK
+strands-agents>=0.1.0
+strands-agents-tools>=0.1.0
+
+# UI
+streamlit>=1.30.0
+
+# Data processing
+pandas>=1.5.0
+numpy>=1.24.0
+
+# Visualization
+matplotlib>=3.7.0
+
+# AWS integration (for Bedrock models)
+boto3>=1.28.0
+
+# Utilities
+python-dotenv>=1.0.0

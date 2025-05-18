@@ -17,6 +17,7 @@ NOVA_MODEL_ID = os.environ.get('NOVA_MODEL_ID', 'amazon.nova-lite-v1:0')
 IMAGE_DPI = 300
 IMAGE_QUALITY = 75
 MAX_IMAGE_SIZE = (1024, 1024)
+STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'static')
 
 def convert_document_to_image(file_obj: BinaryIO, file_name: Optional[str] = None) -> tuple:
     """

@@ -66,3 +66,7 @@ ENV/
 logs/
 src/agents/claude/__pycache__/banking_onboarding.cpython-312.pyc
 test_env.py
+src/utils/document_processing/__pycache__/pdf_passport_detector_refactored.cpython-311.pyc
+src/utils/document_processing/__pycache__/pdf_passport_detector_refactored.cpython-311.pyc
+src/utils/document_processing/__pycache__/pdf_passport_detector_refactored.cpython-311.pyc
+src/utils/document_processing/__pycache__/pdf_passport_detector_refactored.cpython-311.pyc
