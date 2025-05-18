@@ -12,9 +12,10 @@ from agent_squad.classifiers import BedrockClassifier, BedrockClassifierOptions
 
 from dotenv import load_dotenv
 # Load environment variables
-load_dotenv(os.path.join(os.path.dirname(__file__), '../../../config/.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), '../../config/.env'))
 
 model= os.getenv('BEDROCK_MODEL')
+print(model)
 reg=os.getenv('AWS_REGION')
 custom_bedrock_classifier = BedrockClassifier(BedrockClassifierOptions(
     model_id=model,
@@ -110,18 +111,15 @@ model = os.getenv('BEDROCK_MODEL', 'amazon.nova-lite-v1:0')
 region = os.getenv('AWS_REGION', 'us-east-1')
 
 # Update agent creation with model and region
-kb_agent = create_kb_agent(model=model, region=region)
+# kb_agent = create_kb_agent(model=model, region=region)
 regulator_agent = create_regulator_agent(model=model, region=region) 
-relationship_agent = create_relationship_agent(model=model,region= region)
-assesment_agent = create_assesment_agent(model=model,region=region)
+relationship_agent=create_relationship_agent(model=model, region=region)
 
-onboarding_agent = ChainAgent(ChainAgentOptions(
-    name='BasicChainAgent',
-    description='A simple chain of multiple agents',
-    agents=[relationship_agent,kb_agent, assesment_agent]
-))
+#Add agents to the orchestrator
+orchestrator.add_agent(regulator_agent)
+orchestrator.add_agent(relationship_agent)
 
-orchestrator.add_agent(onboarding_agent)
+orchestrator.set_default_agent("Relationship Agent")
 
 
 async def handle_request(_orchestrator: AgentSquad, _user_input: str, _user_id: str, _session_id: str, chat_history: List[ConversationMessage]):
@@ -159,13 +157,11 @@ async def main(message: cl.Message):
             print("Exiting the program. Goodbye!")
             sys.exit()
     response= asyncio.run(handle_request(orchestrator, user_input, user_id, session_id, chat_history))
- #   chat_history.append({"role": "user", "content": user_input})
- #   chat_history.append({"role": "assistant", "content": response.output})
     chat_history.append(response.output)
     cl.user_session.set("chat_history", chat_history)
     #check if response includes the word TERMINATE
     if 'TERMINATE' in response.output.content[0]['text']:
-        response = asyncio.run(reg_agent.process_request(user_input, user_id, session_id, chat_history))
+        response = asyncio.run(regulator_agent.process_request(user_input, user_id, session_id, chat_history))
         print(response.output.content[0]['text'])
         await cl.Message(
             content=response.content[0]['text'],

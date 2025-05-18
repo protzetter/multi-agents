@@ -1,30 +1,29 @@
 import uuid
 import asyncio
-from typing import Optional, List, Dict, Any
-import json
+
 import sys
-from multi_agent_orchestrator.orchestrator import MultiAgentOrchestrator, OrchestratorConfig
-from multi_agent_orchestrator.agents import BedrockLLMAgent,BedrockLLMAgentOptions, AgentResponse, AgentCallbacks
-from multi_agent_orchestrator.agents import ChainAgent, ChainAgentOptions
-from multi_agent_orchestrator.types import ConversationMessage, ParticipantRole
+from agent_squad.orchestrator import AgentSquad
+from agent_squad.agents import BedrockLLMAgent,BedrockLLMAgentOptions, AgentResponse, AgentCallbacks
+from agent_squad.agents import ChainAgent, ChainAgentOptions
 
-# orchestrator = MultiAgentOrchestrator(options=OrchestratorConfig(
-#   LOG_AGENT_CHAT=True,
-#   LOG_CLASSIFIER_CHAT=True,
-#   LOG_CLASSIFIER_RAW_OUTPUT=True,
-#   LOG_CLASSIFIER_OUTPUT=True,
-#   LOG_EXECUTION_TIMES=True,
-#   MAX_RETRIES=3,
-#   USE_DEFAULT_AGENT_IF_NONE_IDENTIFIED=True,
-#   MAX_MESSAGE_PAIRS_PER_AGENT=10
-# ))
 
-from multi_agent_orchestrator.orchestrator import MultiAgentOrchestrator
-from multi_agent_orchestrator.classifiers import BedrockClassifier, BedrockClassifierOptions
+from agent_squad.orchestrator import AgentSquad
+from agent_squad.classifiers import BedrockClassifier, BedrockClassifierOptions
 
-temporary_model_until_fixed='us.anthropic.claude-3-5-sonnet-20241022-v2:0'
+
+from dotenv import load_dotenv
+# Load environment variables
+import os
+# Use absolute path to load environment variables
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../config/.env')
+load_dotenv(config_path)
+model= os.getenv('BEDROCK_MODEL')
+reg=os.getenv('AWS_REGION')
+
+
 custom_bedrock_classifier = BedrockClassifier(BedrockClassifierOptions(
-    model_id=temporary_model_until_fixed,
+    model_id=model,
+    region=reg,
     inference_config={
         'maxTokens': 500,
         'temperature': 0.7,
@@ -33,9 +32,8 @@ custom_bedrock_classifier = BedrockClassifier(BedrockClassifierOptions(
 ))
 
 
-orchestrator = MultiAgentOrchestrator()
+orchestrator = AgentSquad(classifier=custom_bedrock_classifier)
 
-#orchestrator = MultiAgentOrchestrator(classifier=custom_bedrock_classifier)
 
 class BedrockLLMAgentCallbacks(AgentCallbacks):
     def on_llm_new_token(self, token: str) -> None:
@@ -44,11 +42,11 @@ class BedrockLLMAgentCallbacks(AgentCallbacks):
 
 
 
-from multi_agent_orchestrator.agents import BedrockLLMAgent, BedrockLLMAgentOptions
-from multi_agent_orchestrator.retrievers import AmazonKnowledgeBasesRetriever, AmazonKnowledgeBasesRetrieverOptions
+from agent_squad.agents import BedrockLLMAgent, BedrockLLMAgentOptions
+from agent_squad.retrievers import AmazonKnowledgeBasesRetriever, AmazonKnowledgeBasesRetrieverOptions
 
 
-def create_relationship_agent(model:str):
+def create_relationship_agent(model:str,region:str):
     return BedrockLLMAgent(BedrockLLMAgentOptions(
         name="Relationship Agent",
         description="You are a banking onboarding agent and you need to get the required information from a customer that wants to open an account"
@@ -56,21 +54,23 @@ def create_relationship_agent(model:str):
                     "Once you have all the information required you need to ask the regulator agent to review the information for completeness"
                     "Ask until you have all customer information. Once you have the information please reply TERMINATE",
         model_id=model,
+        region=region,
         streaming=False
     ))
 
-def create_assesment_agent(model:str):
+def create_assesment_agent(model:str, region:str):
     return BedrockLLMAgent(BedrockLLMAgentOptions(
         name="Relationship Agent",
         description="You are a banking onboarding agent and you need to get the required information from a customer that wants to open an account"
                     "Ask until you have all customer information. Once you have the information please reply TERMINATE",
         model_id=model,
+        region=region,
         streaming=False
     ))
 
 
 
-def create_regulator_agent(model:str):
+def create_regulator_agent(model:str,region:str):
     return BedrockLLMAgent(BedrockLLMAgentOptions(
         name="Regulator Agent",
         description="You are a banking regulator agent and you need to ensure that the relationship agent has gathered all required information from the customer"
@@ -80,7 +80,7 @@ def create_regulator_agent(model:str):
     ))
 
 
-
+# only use if you have a Bedrock KB available
 
 def create_kb_agent():
     return BedrockLLMAgent(BedrockLLMAgentOptions(
@@ -103,21 +103,26 @@ def create_kb_agent():
         ))
     ))
 
-kb_agent= create_kb_agent()
-model='amazon.nova-pro-v1:0'
-regulator_agent=create_regulator_agent(model=model)
-relationship_agent=create_relationship_agent(model=model)
-assesment_agent=create_assesment_agent(model=model)
 
-onboarding_agent = ChainAgent(ChainAgentOptions(
-    name='BasicChainAgent',
-    description='A simple chain of multiple agents',
-    agents=[kb_agent, assesment_agent]
-))
+# kb_agent= create_kb_agent() #only use if you have a Bedrock KB available
 
-orchestrator.add_agent(onboarding_agent)
+regulator_agent=create_regulator_agent(model=model,region=reg)
+relationship_agent=create_relationship_agent(model=model, region=reg)
+assesment_agent=create_assesment_agent(model=model,region=reg)
 
-async def handle_request(_orchestrator: MultiAgentOrchestrator, _user_input: str, _user_id: str, _session_id: str):
+#onboarding_agent = ChainAgent(ChainAgentOptions(
+#    name='BasicChainAgent',
+#    description='A simple chain of multiple agents',
+#    agents=[relationship_agent, assesment_agent]
+#))
+
+#Add agents to the orchestrator
+orchestrator.add_agent(relationship_agent)
+orchestrator.add_agent(regulator_agent)
+
+orchestrator.set_default_agent("Relationship Agent")
+
+async def handle_request(_orchestrator: AgentSquad, _user_input: str, _user_id: str, _session_id: str):
     response: AgentResponse = await _orchestrator.route_request(_user_input, _user_id, _session_id)
     # Print metadata
     print("\nMetadata:")

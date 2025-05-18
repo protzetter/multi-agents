@@ -1,35 +1,24 @@
 from agent_squad.orchestrator import AgentSquad
 from agent_squad.agents import BedrockLLMAgent,BedrockLLMAgentOptions, AgentResponse, AgentCallbacks
+from agent_squad.classifiers import BedrockClassifier, BedrockClassifierOptions
 from agent_squad.agents import ChainAgent, ChainAgentOptions
-from agent_squad.types import ConversationMessage, ParticipantRole
-from typing import Optional, List, Dict, Any
+from agent_squad.types import ConversationMessage
+from typing import List
 import uuid
 import asyncio
 import chainlit as cl
 import sys
 
-# temporary_model_until_fixed='us.anthropic.claude-3-5-sonnet-20241022-v2:0'
-# custom_bedrock_classifier = BedrockClassifier(BedrockClassifierOptions(
-#     model_id=temporary_model_until_fixed,
-#     inference_config={
-#         'maxTokens': 500,
-#         'temperature': 0.7,
-#         'topP': 0.9
-#     }
-# ))
 
 import os
 from dotenv import load_dotenv
+
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), '../../../config/.env'))
-model= os.getenv('BEDROCK_MODEL')
-reg=os.getenv('AWS_REGION')
-key= os.getenv('ANTHROPIC_API_KEY')
+model = os.getenv('BEDROCK_MODEL', 'anthropic.claude-v2:1')
+region = os.getenv('AWS_REGION', 'us-east-1')
 
-# Create an orchestrator instance
-from agent_squad.classifiers import BedrockClassifier, BedrockClassifierOptions
-
-# Initialize the classifier
+# Initialize the classifier options
 classifier = BedrockClassifierOptions(
     model_id=model,
     region=reg,
@@ -50,11 +39,8 @@ class BedrockLLMAgentCallbacks(AgentCallbacks):
 
 
 
-from agent_squad.agents import BedrockLLMAgent, BedrockLLMAgentOptions
-from agent_squad.retrievers import AmazonKnowledgeBasesRetriever, AmazonKnowledgeBasesRetrieverOptions
 
-
-def create_relationship_agent(model:str):
+def create_relationship_agent(model:str,region:str):
     return BedrockLLMAgent(BedrockLLMAgentOptions(
         name="Relationship Agent",
         description="You are a banking onboarding agent and you need to get the required information from a customer that wants to open an account"
@@ -63,44 +49,33 @@ def create_relationship_agent(model:str):
                     "Ask until you have all customer information. Please confirm with the customer that the information is complete and accurate"
                     "Once you have the information please reply TERMINATE",
         model_id=model,
-        region='us-east-1',
-        streaming=False
-    ))
-
-def create_assesment_agent(model:str):
-    return BedrockLLMAgent(BedrockLLMAgentOptions(
-        name="Relationship Agent",
-        description="You are a banking onboarding agent and you need to get the required information from a customer that wants to open an account"
-                    "You are receiving questions that you need to ask. Do not say thank you, but use the quesions to ask the customer information"
-                    "Ask until you have all customer information. Once you have the information please reply TERMINATE",
-        model_id=model,
-        region='us-east-1',
+        region=region,
         streaming=False
     ))
 
 
 
-def create_regulator_agent(model:str):
+def create_regulator_agent(model:str,region:str):
     return BedrockLLMAgent(BedrockLLMAgentOptions(
         name="Regulator Agent",
         description="You are a banking regulator agent and you need to ensure that the relationship agent has gathered all required information from the customer"
                     "Check the context and make sure you have the required information. Once you are sure you have the infomation needed you can proceed to next steps",
         model_id=model,
-        region='us-east-1',
+        region=region,
         streaming=False
     ))
 
 
 
 
-def create_kb_agent():
+def create_kb_agent(model:str, region:str):
     return BedrockLLMAgent(BedrockLLMAgentOptions(
         name="My personal agent",
         description="My personal agent is responsible for giving information about banking customer complicane, onboarding, risk assessment and any question related to financial services."
                     "Answer the question based only on the context provided.",
         streaming=True,
-        model_id="amazon.nova-micro-v1:0",
-        region='us-east-1',
+        model_id=model,
+        region=region,
         inference_config={
             "temperature": 0.1,
         },
@@ -115,20 +90,16 @@ def create_kb_agent():
         ))
     ))
 
-#kb_agent= create_kb_agent() #remove if you do not have a knowéledge base defined
-regulator_agent=create_regulator_agent(model=model)
-relationship_agent=create_relationship_agent(model=model)
-assesment_agent=create_assesment_agent(model=model)
+#kb_agent= create_kb_agent() #remove if you do not have a knowledge base defined
+regulator_agent=create_regulator_agent(model=model,region=region)
+relationship_agent=create_relationship_agent(model=model,region=region)
 
-onboarding_agent = ChainAgent(ChainAgentOptions(
-    name='BasicChainAgent',
-    description='A simple chain of multiple agents',
-    agents=[relationship_agent, assesment_agent]
-))
 
-orchestrator.add_agent(onboarding_agent)
+#Add agents to the orchestrator
+orchestrator.add_agent(regulator_agent)
+orchestrator.add_agent(relationship_agent)
+
 orchestrator.set_default_agent("Relationship Agent")
-
 
 async def handle_request(_orchestrator: AgentSquad, _user_input: str, _user_id: str, _session_id: str, chat_history: List[ConversationMessage]):
     response: AgentResponse = await _orchestrator.route_request(_user_input, _user_id, _session_id,chat_history)
@@ -165,8 +136,6 @@ async def main(message: cl.Message):
             print("Exiting the program. Goodbye!")
             sys.exit()
     response= asyncio.run(handle_request(orchestrator, user_input, user_id, session_id, chat_history))
- #   chat_history.append({"role": "user", "content": user_input})
- #   chat_history.append({"role": "assistant", "content": response.output})
     chat_history.append(response.output)
     cl.user_session.set("chat_history", chat_history)
     #check if response includes the word TERMINATE
