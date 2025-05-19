@@ -1,8 +1,25 @@
 from strands import Agent, tool
-from strands_tools import calculator, python_repl, http_request
-import json
+from strands_tools import calculator, python_repl
+from strands.models import BedrockModel
+from strands.models.anthropic import AnthropicModel
 import os
+from dotenv import load_dotenv
 
+# Add the project root to the path so we can import our modules
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../config/.env')
+load_dotenv(config_path)
+key = os.getenv('ANTHROPIC_API_KEY')
+anthropic_model = AnthropicModel(
+    client_args={
+        "api_key": key,
+    },
+    # **model_config
+    max_tokens=1028,
+    model_id="claude-3-7-sonnet-20250219",
+    params={
+        "temperature": 0.7,
+    }
+)
 @tool
 def get_stock_data(symbol: str) -> dict:
     """
@@ -159,7 +176,7 @@ return f"Generated price chart for {{stock_data['name']}} ({symbol}) showing the
 
 # Create the stock information agent
 stock_agent = Agent(
-    model="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    model=anthropic_model,
     tools=[get_stock_data, compare_stocks, generate_stock_chart_code, calculator, python_repl],
     system_prompt="""
     You are a stock information assistant specialized in financial analysis and visualization.

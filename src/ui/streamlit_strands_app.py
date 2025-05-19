@@ -100,50 +100,40 @@ if user_input:
                 response = process_with_orchestration(user_input, st.session_state.session_id)
                 agent_name = response["agent"]
                 message = response["response"]
-                metadata = response.get("metadata", {})
                 avatar = "🧠"
             elif st.session_state.current_agent == "banking":
                 response = orchestrate_onboarding(user_input, st.session_state.user_id, st.session_state.session_id, st.session_state.chat_history)
                 agent_name = response["agent"]
                 message = response["response"]
-                metadata = response.get("metadata", {})
                 avatar = "🏦"
             elif st.session_state.current_agent == "document":
                 response = document_agent(user_input)
                 agent_name = "Document Agent"
                 message = response.message
-                metadata = response.metadata
                 avatar = "📄"
             elif st.session_state.current_agent == "stock":
                 response = stock_agent(user_input)
                 agent_name = "Stock Agent"
                 message = response.message
-                metadata = response.metadata
                 avatar = "📈"
             elif st.session_state.current_agent == "rag":
                 response = rag_agent(user_input)
                 agent_name = "Knowledge Base Agent"
                 message = response.message
-                metadata = response.metadata
                 avatar = "📚"
         except Exception as e:
             st.error(f"Error processing request: {str(e)}")
             agent_name = "Error"
             message = f"An error occurred: {str(e)}"
-            metadata = {}
             avatar = "⚠️"
     
     # Display assistant response
     with st.chat_message("assistant", avatar=avatar):
         st.write(f"**{agent_name}**: {message}")
-        if metadata:
-            with st.expander("View Agent Metadata"):
-                st.json(metadata)
     
     # Add to chat history
     st.session_state.chat_history.append({
         "role": "assistant", 
         "content": f"**{agent_name}**: {message}",
-        "metadata": metadata,
         "avatar": avatar
     })
