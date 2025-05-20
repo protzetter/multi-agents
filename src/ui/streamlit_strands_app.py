@@ -6,6 +6,9 @@ from pathlib import Path
 # Add the project root to the path to import our modules
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
+# Add the project root to the path so we can import our modules
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+
 # Import our Strands agents
 try:
     from src.agents.strands.banking_onboarding_agent import orchestrate_onboarding
@@ -114,7 +117,7 @@ if user_input:
             elif st.session_state.current_agent == "stock":
                 response = stock_agent(user_input)
                 agent_name = "Stock Agent"
-                message = response.message
+                message = response.message['content'][0]['text']
                 avatar = "📈"
             elif st.session_state.current_agent == "rag":
                 response = rag_agent(user_input)
@@ -133,7 +136,5 @@ if user_input:
     
     # Add to chat history
     st.session_state.chat_history.append({
-        "role": "assistant", 
-        "content": f"**{agent_name}**: {message}",
-        "avatar": avatar
+        "content": f"**{agent_name}**: {message}"
     })

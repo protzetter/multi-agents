@@ -1,5 +1,7 @@
 from strands import Agent, tool
 from strands_tools import agent_graph, workflow, think
+from strands.models import BedrockModel
+from strands.models.anthropic import AnthropicModel
 import json
 import os
 import sys

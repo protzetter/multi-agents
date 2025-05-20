@@ -1,5 +1,7 @@
 from strands import Agent, tool
 from strands_tools import file_read, image_reader
+from strands.models import BedrockModel
+from strands.models.anthropic import AnthropicModel
 import os
 import json
 import re

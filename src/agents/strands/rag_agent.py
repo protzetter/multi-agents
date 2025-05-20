@@ -1,5 +1,7 @@
 from strands import Agent, tool
 from strands_tools import retrieve, file_read
+from strands.models import BedrockModel
+from strands.models.anthropic import AnthropicModel
 import os
 import json
 
