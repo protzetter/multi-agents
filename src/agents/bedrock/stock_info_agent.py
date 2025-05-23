@@ -481,6 +481,7 @@ class StockInfoAgent:
             if 'completion' in response_body:
                 # Claude-style response
                 analysis = response_body['completion']
+                print(analysis)
             elif 'output' in response_body and 'message' in response_body['output']:
                 # Nova-style response
                 analysis = response_body['output']['message']['content'][0]['text']

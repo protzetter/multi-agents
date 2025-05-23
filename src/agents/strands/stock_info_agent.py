@@ -2,11 +2,20 @@ from strands import Agent, tool
 from strands_tools import calculator, python_repl, http_request
 from strands.models import BedrockModel
 from strands.models.anthropic import AnthropicModel
-import json
+from dotenv import load_dotenv
 import os
 import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+
+# Add the project root to the path so we can import our modules
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../config/.env')
+load_dotenv(config_path)
+
+region = os.environ.get('BEDROCK_REGION', 'us-east-1')        
+# Get model ID from environment variables or use default
+model= os.environ.get('BEDROCK_MODEL', 'amazon.nova-pro-v1:0')
+print('model:%s',model)
 
 # Import the Yahoo Finance client
 from src.utils.finance.yahoo_finance import yahoo_finance
@@ -22,13 +31,19 @@ anthropic_model = AnthropicModel(
     },
     # **model_config
     max_tokens=1028,
-    model_id="claude-3-7-sonnet-20250219",
+    model_id=model,
     params={
         "temperature": 0.7,
     }
 )
-
-
+bedrock_model=BedrockModel(
+    region_name=region,
+    max_tokens=1028,
+    model_id=model,
+    params={
+        "temperature": 0.7,
+    }
+)
 @tool
 def get_stock_data(symbol: str) -> Dict[str, Any]:
     """
@@ -244,7 +259,7 @@ def search_stocks(query: str, limit: int = 5) -> List[Dict[str, Any]]:
 
 # Create the stock information agent
 stock_agent = Agent(
-    model=anthropic_model,
+    model=bedrock_model,
     tools=[get_stock_data, compare_stocks, get_market_overview, generate_stock_chart_code, search_stocks],
     system_prompt="""
     You are a stock information assistant specialized in financial analysis and visualization.

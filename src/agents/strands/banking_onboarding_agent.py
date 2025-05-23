@@ -6,11 +6,14 @@ import json
 import os
 from dotenv import load_dotenv
 
+
 # Add the project root to the path so we can import our modules
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../config/.env')
 load_dotenv(config_path)
-model= os.getenv('BEDROCK_MODEL')
-region= os.getenv('BEDROCK_REGION')
+region = os.environ.get('BEDROCK_REGION', 'us-east-1')        
+# Get model ID from environment variables or use default
+model= os.environ.get('BEDROCK_MODEL', 'amazon.nova-pro-v1:0')
+print('model:%s',model)
 
 # Create a BedrockModel
 bedrock_model = BedrockModel(
@@ -124,7 +127,7 @@ def save_customer_information(customer_data: dict) -> dict:
 
 # Create the relationship manager agent
 relationship_agent = Agent(
-    model=anthropic_model,
+    model=bedrock_model,
     tools=[validate_customer_id, check_compliance_requirements, save_customer_information, current_time],
     system_prompt="""
     You are a helpful banking relationship manager assistant. Your role is to help customers open new bank accounts
@@ -143,7 +146,7 @@ relationship_agent = Agent(
 
 # Create the regulator agent
 regulator_agent = Agent(
-    model= anthropic_model,
+    model= bedrock_model,
     tools=[check_compliance_requirements],
     system_prompt="""
     You are a banking compliance officer responsible for ensuring all customer onboarding processes

@@ -3,13 +3,29 @@ from strands_tools import file_read, image_reader
 from strands.models import BedrockModel
 from strands.models.anthropic import AnthropicModel
 import os
-import json
-import re
+from dotenv import load_dotenv
+
+
+# Add the project root to the path so we can import our modules
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../config/.env')
+load_dotenv(config_path)
+region = os.environ.get('BEDROCK_REGION', 'us-east-1')        
+# Get model ID from environment variables or use default
+model= os.environ.get('BEDROCK_MODEL', 'amazon.nova-pro-v1:0')
+print('model:%s',model)
+
+# Create a BedrockModel
+bedrock_model = BedrockModel(
+    model_id=model,
+    region_name=region,
+    temperature=0.3,
+)
+
 
 @tool
 def extract_passport_info(image_path: str) -> dict:
     """
-    Extract information from a passport image.
+    Extract information from a passport image from a pdf file
     
     Args:
         image_path: Path to the passport image file
@@ -127,7 +143,7 @@ def extract_bank_statement_info(pdf_path: str) -> dict:
 
 # Create the document processing agent
 document_agent = Agent(
-    model="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    model=bedrock_model,
     tools=[extract_passport_info, validate_passport, extract_bank_statement_info, file_read, image_reader],
     system_prompt="""
     You are a document processing assistant specialized in banking and identity documents.
@@ -155,4 +171,4 @@ if __name__ == "__main__":
             break
             
         response = document_agent(user_input)
-        print(f"\nAssistant: {response.message}")
+        print(f"\nAssistant: {response.message['content'][0]['text']}")
