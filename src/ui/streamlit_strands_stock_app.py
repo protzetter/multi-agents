@@ -2,7 +2,7 @@
 Streamlit application for the Strands Stock Information Agent.
 
 This module provides a web interface for interacting with the Strands stock agent
-using Streamlit.
+using Streamlit with streaming responses.
 """
 import os
 import sys
@@ -17,7 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 
 # Import the Strands Stock Information Agent
-from src.agents.strands.stock_info_agent import stock_agent
+from src.agents.strands.stock_info_agent import stock_agent_streaming
 from src.utils.finance.yahoo_finance import yahoo_finance
 
 # Set up logging
@@ -38,6 +38,9 @@ def init_session_state():
     
     if 'last_market_update' not in st.session_state:
         st.session_state.last_market_update = None
+        
+    if 'streaming_response' not in st.session_state:
+        st.session_state.streaming_response = ""
 
 def display_stock_info(stock_info: Dict[str, Any]):
     """Display stock information in a formatted way."""
@@ -146,27 +149,60 @@ def display_market_overview():
         
         with st.spinner("Fetching market overview..."):
             try:
-                # Use the Strands agent to get market overview
-                response = stock_agent("Get the current market overview with major indices")
+                # Get raw market data from Yahoo Finance first (while AI is thinking)
+                market_data = yahoo_finance.get_market_summary()
                 
-                # Extract the message from the response - simplest approach
-                agent_analysis = ""
-                try:
-                    # Direct access to the text field based on the structure you provided
-                    agent_analysis = response['content'][0]['text']
-                except (KeyError, TypeError, IndexError):
-                    # If any part of the path is missing, fall back to string representation
-                    agent_analysis = str(response)
+                # Create a placeholder for streaming response
+                response_placeholder = st.empty()
+                st.session_state.streaming_response = ""
+                
+                # Define callback function for streaming
+                def update_response(chunk):
+                    try:
+                        if chunk and hasattr(chunk, 'content') and chunk.content and len(chunk.content) > 0:
+                            text_chunk = chunk.content[0].text if hasattr(chunk.content[0], 'text') else str(chunk.content[0])
+                            st.session_state.streaming_response += text_chunk
+                            response_placeholder.markdown(st.session_state.streaming_response)
+                    except Exception as e:
+                        st.error(f"Error in streaming callback: {str(e)}")
+                
+                # Use the Strands agent to get market overview with streaming
+                query = "Get the current market overview with major indices"
+                st.info(f"Asking AI: {query}")
+                
+                response = stock_agent_streaming(query, callback=update_response)
+                
+                # Extract the message from the response
+                agent_analysis = st.session_state.streaming_response
+                
+                # If streaming didn't work, try to get the full response
+                if not agent_analysis or len(agent_analysis.strip()) == 0:
+                    st.warning("Streaming response was empty, trying to get full response...")
+                    try:
+                        # Try different ways to extract the response
+                        if hasattr(response, 'content') and response.content:
+                            agent_analysis = response.content[0].text
+                        elif isinstance(response, dict) and 'content' in response:
+                            agent_analysis = response['content'][0]['text']
+                        elif hasattr(response, 'message'):
+                            agent_analysis = response.message
+                        else:
+                            # Last resort: convert the whole response to string
+                            agent_analysis = str(response)
+                            
+                        # Update the placeholder with the full response
+                        response_placeholder.markdown(agent_analysis)
+                    except (AttributeError, IndexError, KeyError) as e:
+                        st.error(f"Error extracting response: {str(e)}")
+                        agent_analysis = "Unable to retrieve market analysis. Please try again."
                 
                 # Parse the response to extract market data
-                # This is a simplified approach - in a real app, you might want to use a more structured approach
                 st.session_state.market_overview = {
                     'agent_response': agent_analysis,
                     'timestamp': current_time
                 }
                 
-                # Also get raw market data from Yahoo Finance for display
-                market_data = yahoo_finance.get_market_summary()
+                # Add market data if available
                 if 'error' not in market_data:
                     st.session_state.market_overview['indices'] = market_data.get('indices', {})
                 
@@ -199,9 +235,12 @@ def display_market_overview():
                 col_index += 1
     
     # Display agent's market analysis
-    if 'agent_response' in overview:
+    if ('agent_response' in overview and overview['agent_response'] and 
+        isinstance(overview['agent_response'], str) and len(overview['agent_response'].strip()) > 0):
         st.subheader("Market Analysis")
         st.write(overview['agent_response'])
+    else:
+        st.error("No market analysis available. The model did not return a response.")
     
     # Display last update time
     if st.session_state.last_market_update:
@@ -213,25 +252,58 @@ def compare_stocks(tickers: List[str]):
         st.warning("Please enter at least one ticker symbol")
         return
     
+    # Create a placeholder for streaming response
+    response_placeholder = st.empty()
+    st.session_state.streaming_response = ""
+    
     with st.spinner(f"Comparing stocks: {', '.join(tickers)}..."):
         try:
-            # Use the Strands agent to compare stocks
-            response = stock_agent(f"Compare these stocks in detail: {', '.join(tickers)}")
-            
-            # Extract the message from the response - simplest approach
-            comparison_analysis = ""
-            try:
-            # Direct access to the text field based on the structure you provided
-                comparison_analysis = response['content'][0]['text']
-            except (KeyError, TypeError, IndexError):
-                # If any part of the path is missing, fall back to string representation
-                comparison_analysis = str(response)
-            
-            # Also get raw comparison data from Yahoo Finance
+            # Get raw comparison data from Yahoo Finance first (while AI is thinking)
             comparison_data = yahoo_finance.get_multiple_quotes(tickers)
             stock_infos = {}
             for ticker in tickers:
                 stock_infos[ticker] = yahoo_finance.get_stock_info(ticker)
+            
+            # Define callback function for streaming
+            def update_response(chunk):
+                try:
+                    if chunk and hasattr(chunk, 'content') and chunk.content and len(chunk.content) > 0:
+                        text_chunk = chunk.content[0].text if hasattr(chunk.content[0], 'text') else str(chunk.content[0])
+                        st.session_state.streaming_response += text_chunk
+                        response_placeholder.markdown(st.session_state.streaming_response)
+                except Exception as e:
+                    st.error(f"Error in streaming callback: {str(e)}")
+            
+            # Use the Strands agent to compare stocks with streaming
+            query = f"Compare these stocks in detail: {', '.join(tickers)}"
+            st.info(f"Asking AI: {query}")
+            
+            response = stock_agent_streaming(query, callback=update_response)
+            
+            # Extract the message from the response
+            comparison_analysis = st.session_state.streaming_response
+            
+            # If streaming didn't work, try to get the full response
+            if not comparison_analysis or len(comparison_analysis.strip()) == 0:
+                st.warning("Streaming response was empty, trying to get full response...")
+                try:
+                    # Try different ways to extract the response
+                    if hasattr(response, 'content') and response.content:
+                        comparison_analysis = response.content[0].text
+                    elif isinstance(response, dict) and 'content' in response:
+                        comparison_analysis = response['content'][0]['text']
+                    elif hasattr(response, 'message'):
+                        comparison_analysis = response.message
+                    else:
+                        # Last resort: convert the whole response to string
+                        comparison_analysis = str(response)
+                        
+                    # Update the placeholder with the full response
+                    response_placeholder.markdown(comparison_analysis)
+                except (AttributeError, IndexError, KeyError) as e:
+                    st.error(f"Error extracting response: {str(e)}")
+                    comparison_analysis = "Unable to retrieve comparison analysis. Please try again."
+            
         except Exception as e:
             st.error(f"Error comparing stocks: {str(e)}")
             return
@@ -264,19 +336,11 @@ def compare_stocks(tickers: List[str]):
     
     # Display the agent's analysis
     st.subheader("Comparison Analysis")
-    
-    # Handle different response formats
-    if 'comparison_analysis' in locals():
+    if (comparison_analysis and isinstance(comparison_analysis, str) and 
+        len(comparison_analysis.strip()) > 0):
         st.write(comparison_analysis)
     else:
-        # Extract the message from the response - simplest approach
-        comparison_analysis = ""
-        try:
-            # Direct access to the text field based on the structure you provided
-            comparison_analysis = response['content'][0]['text']
-        except (KeyError, TypeError, IndexError):
-            # If any part of the path is missing, fall back to string representation
-            comparison_analysis = str(response)
+        st.error("No comparison analysis available. The model did not return a response.")
 
 def get_stock_summary(ticker: str):
     """Get and display a comprehensive summary of a stock."""
@@ -284,22 +348,58 @@ def get_stock_summary(ticker: str):
         st.warning("Please enter a ticker symbol")
         return
     
+    # Create a placeholder for streaming response
+    response_placeholder = st.empty()
+    st.session_state.streaming_response = ""
+    
     with st.spinner(f"Fetching information for {ticker}..."):
         try:
-            # Use the Strands agent to get stock summary
-            response = stock_agent(f"Give me a detailed analysis of {ticker} stock including current price, performance, and key metrics")
-            # Also get raw stock data for display
+            # Also get raw stock data for display first (while the AI is thinking)
             stock_info = yahoo_finance.get_stock_info(ticker)
             historical_data = yahoo_finance.get_historical_data(ticker, period='1mo', interval='1d')
             news = yahoo_finance.get_company_news(ticker, limit=3)
-            # Extract the message from the response - simplest approach
-            agent_analysis = ""
-            try:
-                # Direct access to the text field based on the structure you provided
-                agent_analysis = response['content'][0]['text']
-            except (KeyError, TypeError, IndexError):
-                # If any part of the path is missing, fall back to string representation
-                agent_analysis = str(response)
+            
+            # Define callback function for streaming
+            def update_response(chunk):
+                try:
+                    if chunk and hasattr(chunk, 'content') and chunk.content and len(chunk.content) > 0:
+                        text_chunk = chunk.content[0].text if hasattr(chunk.content[0], 'text') else str(chunk.content[0])
+                        st.session_state.streaming_response += text_chunk
+                        response_placeholder.markdown(st.session_state.streaming_response)
+                except Exception as e:
+                    st.error(f"Error in streaming callback: {str(e)}")
+            
+            # Use the Strands agent to get stock summary with streaming
+            query = f"Give me a detailed analysis of {ticker} stock including current price, performance, and key metrics"
+            st.info(f"Asking AI: {query}")
+            
+            # Call the agent with streaming
+            response = stock_agent_streaming(query, callback=update_response)
+            
+            # Extract the message from the response
+            agent_analysis = st.session_state.streaming_response
+            
+            # If streaming didn't work, try to get the full response
+            if not agent_analysis or len(agent_analysis.strip()) == 0:
+                st.warning("Streaming response was empty, trying to get full response...")
+                try:
+                    # Try different ways to extract the response
+                    if hasattr(response, 'content') and response.content:
+                        agent_analysis = response.content[0].text
+                    elif isinstance(response, dict) and 'content' in response:
+                        agent_analysis = response['content'][0]['text']
+                    elif hasattr(response, 'message'):
+                        agent_analysis = response.message
+                    else:
+                        # Last resort: convert the whole response to string
+                        agent_analysis = str(response)
+                        
+                    # Update the placeholder with the full response
+                    response_placeholder.markdown(agent_analysis)
+                except (AttributeError, IndexError, KeyError) as e:
+                    st.error(f"Error extracting response: {str(e)}")
+                    agent_analysis = "Unable to retrieve stock analysis. Please try again."
+            
             # Create a summary object
             summary = {
                 'ticker': ticker,
@@ -327,23 +427,11 @@ def get_stock_summary(ticker: str):
     
     # Display AI-generated summary
     st.subheader("AI Analysis")
-    
-    # Handle different response formats
-    if 'agent_analysis' in summary:
+    if (summary['agent_analysis'] and isinstance(summary['agent_analysis'], str) and 
+        len(summary['agent_analysis'].strip()) > 0):
         st.write(summary['agent_analysis'])
     else:
-        # Fallback to direct response handling
-        if hasattr(response, 'message'):
-            st.write(response.message)
-        elif isinstance(response, dict) and 'role' in response:
-            # Handle case where response is a dict with content
-            if isinstance(response['role'], list) and len(response['0']) > 0:
-                st.write(str(response['role']['content'][0]))
-            else:
-                st.write(str(response['content']))
-        else:
-            # Fallback to string representation
-            st.write(str(response))
+        st.error("No AI analysis available. The model did not return a response.")
     
     # Display tabs for historical data and news
     tab1, tab2 = st.tabs(["Historical Performance", "Recent News"])
@@ -360,22 +448,55 @@ def search_stocks(query: str):
         st.warning("Please enter a search query")
         return
     
+    # Create a placeholder for streaming response
+    response_placeholder = st.empty()
+    st.session_state.streaming_response = ""
+    
     with st.spinner(f"Searching for '{query}'..."):
         try:
-            # Use the Strands agent to search for stocks
-            response = stock_agent(f"Search for stocks matching: {query}")
-            
-            # Extract the message from the response - simplest approach
-            search_analysis = ""
-            try:
-            # Direct access to the text field based on the structure you provided
-                search_analysis = response['content'][0]['text']
-            except (KeyError, TypeError, IndexError):
-                # If any part of the path is missing, fall back to string representation
-                search_analysis = str(response)
-                
-            # Also get raw search results
+            # Get raw search results first (while AI is thinking)
             results = yahoo_finance.search_stocks(query)
+            
+            # Define callback function for streaming
+            def update_response(chunk):
+                try:
+                    if chunk and hasattr(chunk, 'content') and chunk.content and len(chunk.content) > 0:
+                        text_chunk = chunk.content[0].text if hasattr(chunk.content[0], 'text') else str(chunk.content[0])
+                        st.session_state.streaming_response += text_chunk
+                        response_placeholder.markdown(st.session_state.streaming_response)
+                except Exception as e:
+                    st.error(f"Error in streaming callback: {str(e)}")
+            
+            # Use the Strands agent to search for stocks with streaming
+            query_text = f"Search for stocks matching: {query}"
+            st.info(f"Asking AI: {query_text}")
+            
+            response = stock_agent_streaming(query_text, callback=update_response)
+            
+            # Extract the message from the response
+            search_analysis = st.session_state.streaming_response
+            
+            # If streaming didn't work, try to get the full response
+            if not search_analysis or len(search_analysis.strip()) == 0:
+                st.warning("Streaming response was empty, trying to get full response...")
+                try:
+                    # Try different ways to extract the response
+                    if hasattr(response, 'content') and response.content:
+                        search_analysis = response.content[0].text
+                    elif isinstance(response, dict) and 'content' in response:
+                        search_analysis = response['content'][0]['text']
+                    elif hasattr(response, 'message'):
+                        search_analysis = response.message
+                    else:
+                        # Last resort: convert the whole response to string
+                        search_analysis = str(response)
+                        
+                    # Update the placeholder with the full response
+                    response_placeholder.markdown(search_analysis)
+                except (AttributeError, IndexError, KeyError) as e:
+                    st.error(f"Error extracting response: {str(e)}")
+                    search_analysis = "Unable to retrieve search results. Please try again."
+                
         except Exception as e:
             st.error(f"Error searching for stocks: {str(e)}")
             return
@@ -404,16 +525,11 @@ def search_stocks(query: str):
     
     # Display agent's search analysis
     with st.expander("AI Search Analysis"):
-        if 'search_analysis' in locals():
+        if (search_analysis and isinstance(search_analysis, str) and 
+            len(search_analysis.strip()) > 0):
             st.write(search_analysis)
         else:
-            # Extract the message from the response - simplest approach
-            try:
-            # Direct access to the text field based on the structure you provided
-                st.write(response['content'][0]['text'])
-            except (KeyError, TypeError, IndexError):
-                # If any part of the path is missing, fall back to string representation
-                st.write(str(response))
+            st.error("No AI search analysis available. The model did not return a response.")
 
 def main():
     """Main function to run the Streamlit app."""
@@ -514,7 +630,7 @@ def main():
                 ):
                     if st.button("View Details", key=f"history_{i}"):
                         st.session_state.current_ticker = item['ticker']
-                        st.experimental_rerun()
+                        st.rerun()
                     
                     if 'stock_info' in item:
                         stock_info = item['stock_info']

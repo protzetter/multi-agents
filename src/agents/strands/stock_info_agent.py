@@ -5,7 +5,7 @@ from strands.models.anthropic import AnthropicModel
 from dotenv import load_dotenv
 import os
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Callable
 from datetime import datetime
 
 # Add the project root to the path so we can import our modules
@@ -260,7 +260,7 @@ def search_stocks(query: str, limit: int = 5) -> List[Dict[str, Any]]:
 # Create the stock information agent
 stock_agent = Agent(
     model=bedrock_model,
-    tools=[get_stock_data, compare_stocks, get_market_overview, generate_stock_chart_code, search_stocks],
+    tools=[get_stock_data, compare_stocks, get_market_overview, generate_stock_chart_code, search_stocks,],
     system_prompt="""
     You are a stock information assistant specialized in financial analysis and visualization.
     Your role is to:
@@ -284,6 +284,61 @@ stock_agent = Agent(
     """
 )
 
+def stock_agent_streaming(query: str, callback: Callable = None):
+    """
+    Call the stock agent with streaming enabled.
+    
+    Args:
+        query: User query about stocks
+        callback: Optional callback function to process streaming chunks
+        
+    Returns:
+        The final response from the agent
+    """
+    try:
+        # First try with streaming
+        logger.info(f"Calling stock agent with streaming for query: {query}")
+        response = stock_agent(query, stream=True, callback=callback)
+        
+        # Check if we got a valid streaming response
+        if not response or not hasattr(response, 'content') or not response.content:
+            logger.warning("Streaming response was empty, falling back to non-streaming")
+            # Fall back to non-streaming if the streaming response is empty
+            response = stock_agent(query, stream=False)
+            
+            # If we have a callback, manually call it with the full response to simulate streaming
+            if callback and hasattr(response, 'content') and response.content:
+                callback(response)
+        
+        # Ensure we return a string response for the UI
+        if hasattr(response, 'message') and isinstance(response.message, str):
+            return {"content": [{"text": response.message}]}
+        elif hasattr(response, 'content') and response.content:
+            # Already has the right structure
+            return response
+        else:
+            # Convert to expected format
+            return {"content": [{"text": str(response)}]}
+            
+    except Exception as e:
+        logger.error(f"Error in stock_agent_streaming: {str(e)}")
+        # Return a simple dict that mimics the structure expected by the UI
+        error_response = {"content": [{"text": f"Error processing request: {str(e)}"}]}
+        
+        # If we have a callback, call it with the error response
+        if callback:
+            try:
+                # Create a simple object with the expected structure
+                class ErrorChunk:
+                    def __init__(self, text):
+                        self.content = [type('obj', (object,), {'text': text})]
+                
+                callback(ErrorChunk(f"Error processing request: {str(e)}"))
+            except Exception as callback_error:
+                logger.error(f"Error in callback: {str(callback_error)}")
+        
+        return error_response
+
 # Example usage
 if __name__ == "__main__":
     print("Stock Information System")
@@ -295,5 +350,12 @@ if __name__ == "__main__":
         if user_input.lower() == "exit":
             break
             
-        response = stock_agent(user_input)
-        print(f"\nAssistant: {response.message}")
+        # Example of streaming output
+        print("\nAssistant: ", end="", flush=True)
+        
+        def print_chunk(chunk):
+            if chunk and hasattr(chunk, 'content') and chunk.content:
+                print(chunk.content[0].text, end="", flush=True)
+        
+        response = stock_agent_streaming(user_input, callback=print_chunk)
+        print()  # Add a newline at the end
