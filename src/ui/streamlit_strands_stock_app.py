@@ -168,7 +168,6 @@ def display_market_overview():
                 
                 # Use the Strands agent to get market overview with streaming
                 query = "Get the current market overview with major indices"
-                st.info(f"Asking AI: {query}")
                 
                 response = stock_agent_streaming(query, callback=update_response)
                 
@@ -276,7 +275,6 @@ def compare_stocks(tickers: List[str]):
             
             # Use the Strands agent to compare stocks with streaming
             query = f"Compare these stocks in detail: {', '.join(tickers)}"
-            st.info(f"Asking AI: {query}")
             
             response = stock_agent_streaming(query, callback=update_response)
             
@@ -371,7 +369,6 @@ def get_stock_summary(ticker: str):
             
             # Use the Strands agent to get stock summary with streaming
             query = f"Give me a detailed analysis of {ticker} stock including current price, performance, and key metrics"
-            st.info(f"Asking AI: {query}")
             
             # Call the agent with streaming
             response = stock_agent_streaming(query, callback=update_response)
@@ -469,7 +466,6 @@ def search_stocks(query: str):
             
             # Use the Strands agent to search for stocks with streaming
             query_text = f"Search for stocks matching: {query}"
-            st.info(f"Asking AI: {query_text}")
             
             response = stock_agent_streaming(query_text, callback=update_response)
             
@@ -478,7 +474,6 @@ def search_stocks(query: str):
             
             # If streaming didn't work, try to get the full response
             if not search_analysis or len(search_analysis.strip()) == 0:
-                st.warning("Streaming response was empty, trying to get full response...")
                 try:
                     # Try different ways to extract the response
                     if hasattr(response, 'content') and response.content:

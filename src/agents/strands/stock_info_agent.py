@@ -3,7 +3,7 @@ from strands_tools import calculator, python_repl, http_request
 from strands.models import BedrockModel
 from strands.models.anthropic import AnthropicModel
 from dotenv import load_dotenv
-import os
+import os,sys
 import logging
 from typing import Dict, Any, List, Optional, Callable
 from datetime import datetime
@@ -12,9 +12,13 @@ from datetime import datetime
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../config/.env')
 load_dotenv(config_path)
 
+# Add the project root to the path so we can import our modules
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(project_root)
+
 region = os.environ.get('BEDROCK_REGION', 'us-east-1')        
 # Get model ID from environment variables or use default
-model= os.environ.get('BEDROCK_MODEL', 'amazon.nova-pro-v1:0')
+model= os.environ.get('BEDROCK_MODEL', 'us.amazon.nova-pro-v1:0')
 print('model:%s',model)
 
 # Import the Yahoo Finance client
@@ -146,7 +150,6 @@ def compare_stocks(symbols: list) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error in compare_stocks for {symbols}: {str(e)}")
         return {"error": f"Failed to compare stocks: {str(e)}"}
-
 @tool
 def get_market_overview() -> Dict[str, Any]:
     """
@@ -158,10 +161,10 @@ def get_market_overview() -> Dict[str, Any]:
     try:
         # Fetch market summary
         market_summary = yahoo_finance.get_market_summary()
+        print(market_summary)
         
         if 'error' in market_summary:
             return {"error": f"Error fetching market data: {market_summary['error']}"}
-        
         return market_summary
     except Exception as e:
         logger.error(f"Error in get_market_overview: {str(e)}")
