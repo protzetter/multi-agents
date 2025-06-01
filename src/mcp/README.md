@@ -46,20 +46,6 @@ For debug logging:
 python run_stock_mcp_server.py --debug
 ```
 
-## Using with Amazon Q
-
-Once the server is running, you can use it with Amazon Q by adding it as an MCP server:
-
-```bash
-q mcp add stock-agent ./src/mcp/run_stock_mcp_server.py
-```
-
-Then you can interact with it in Amazon Q:
-
-```
-q chat
-```
-
 And ask questions like:
 - "What's the current price of AAPL stock?"
 - "Compare AAPL, MSFT, and GOOGL"
@@ -70,11 +56,6 @@ And ask questions like:
 
 The server exposes the following tools:
 
-- `get_stock_info`: Get detailed information about a specific stock
-- `compare_multiple_stocks`: Compare metrics for multiple stocks
-- `get_market_summary`: Get an overview of major market indices
-- `generate_chart_code`: Generate Python code for stock price charts
-- `search_for_stocks`: Search for stocks by name or ticker
 - `ask_stock_agent`: Ask the stock agent questions about stocks and markets
 
 ## Architecture
@@ -85,3 +66,5 @@ The MCP server is built on top of the Strands SDK stock agent implementation. It
 - Strands SDK for agent functionality
 - Yahoo Finance API for stock data retrieval
 - Bedrock or Anthropic models for analysis and responses
+
+
