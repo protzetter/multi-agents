@@ -1,25 +1,23 @@
+import os,sys
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+sys.path.append(project_root)
+
 from strands import Agent, tool
-from strands_tools import calculator, python_repl, http_request
 from strands.models import BedrockModel
 from strands.models.anthropic import AnthropicModel
 from dotenv import load_dotenv
-import os,sys
 import logging
-from typing import Dict, Any, List, Optional, Callable
-from datetime import datetime
+from typing import Dict, Any, List,Callable
+import asyncio
 
 # Add the project root to the path so we can import our modules
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../config/.env')
 load_dotenv(config_path)
 
-# Add the project root to the path so we can import our modules
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-sys.path.append(project_root)
-
 region = os.environ.get('BEDROCK_REGION', 'us-east-1')        
 # Get model ID from environment variables or use default
 model= os.environ.get('BEDROCK_MODEL', 'us.amazon.nova-pro-v1:0')
-print('model:%s',model)
+ant_model=os.environ.get('ANTHROPIC_MODEL', 'claude-3-7-sonnet-20250219')           
 
 # Import the Yahoo Finance client
 from src.utils.finance.yahoo_finance import yahoo_finance
@@ -35,7 +33,7 @@ anthropic_model = AnthropicModel(
     },
     # **model_config
     max_tokens=1028,
-    model_id=model,
+    model_id=ant_model,
     params={
         "temperature": 0.7,
     }
@@ -262,7 +260,7 @@ def search_stocks(query: str, limit: int = 5) -> List[Dict[str, Any]]:
 
 # Create the stock information agent
 stock_agent = Agent(
-    model=bedrock_model,
+    model=anthropic_model,
     tools=[get_stock_data, compare_stocks, get_market_overview, generate_stock_chart_code, search_stocks,],
     system_prompt="""
     You are a stock information assistant specialized in financial analysis and visualization.
@@ -287,7 +285,7 @@ stock_agent = Agent(
     """
 )
 
-def stock_agent_streaming(query: str, callback: Callable = None):
+async def stock_agent_streaming(query: str, callback: Callable = None):
     """
     Call the stock agent with streaming enabled.
     
@@ -301,28 +299,8 @@ def stock_agent_streaming(query: str, callback: Callable = None):
     try:
         # First try with streaming
         logger.info(f"Calling stock agent with streaming for query: {query}")
-        response = stock_agent(query, stream=True, callback=callback)
-        
-        # Check if we got a valid streaming response
-        if not response or not hasattr(response, 'content') or not response.content:
-            logger.warning("Streaming response was empty, falling back to non-streaming")
-            # Fall back to non-streaming if the streaming response is empty
-            response = stock_agent(query, stream=False)
-            
-            # If we have a callback, manually call it with the full response to simulate streaming
-            if callback and hasattr(response, 'content') and response.content:
-                callback(response)
-        
-        # Ensure we return a string response for the UI
-        if hasattr(response, 'message') and isinstance(response.message, str):
-            return {"content": [{"text": response.message}]}
-        elif hasattr(response, 'content') and response.content:
-            # Already has the right structure
-            return response
-        else:
-            # Convert to expected format
-            return {"content": [{"text": str(response)}]}
-            
+        stock_agent(query, stream=True, callback=callback)
+           
     except Exception as e:
         logger.error(f"Error in stock_agent_streaming: {str(e)}")
         # Return a simple dict that mimics the structure expected by the UI
@@ -360,5 +338,5 @@ if __name__ == "__main__":
             if chunk and hasattr(chunk, 'content') and chunk.content:
                 print(chunk.content[0].text, end="", flush=True)
         
-        response = stock_agent_streaming(user_input, callback=print_chunk)
+        asyncio.run(stock_agent_streaming(user_input, callback=print_chunk))
         print()  # Add a newline at the end

@@ -31,7 +31,7 @@ def main():
     
     # Start the server
     print(f"Starting Stock Agent MCP Server on {args.host}:{args.port}...")
-    uvicorn.run("src.mcp.stock_agent_mcp_server:app", host=args.host, port=args.port, reload=False)
+    uvicorn.run("src.mcp.stock_agent_mcp_server:mcp", host=args.host, port=args.port, reload=False)
 
 if __name__ == "__main__":
     main()
