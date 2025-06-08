@@ -1,4 +1,4 @@
-from strands import Agent, tool
+from strands import Agent
 from strands.models.bedrock import BedrockModel
 import os,sys
 from dotenv import load_dotenv
