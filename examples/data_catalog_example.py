@@ -73,7 +73,7 @@ def main():
         
         try:
             response = agent(query)
-            print(f"Response: {response.message}\n")
+#            print(f"Response: {response.message.content[0].text}\n")
         except Exception as e:
             print(f"Error: {e}\n")
     
@@ -95,7 +95,7 @@ def main():
             
         try:
             response = agent(user_query)
-            print(f"\nAgent: {response.message}")
+#            print(f"\nAgent: {response.message.content[0].text}")
         except Exception as e:
             print(f"Error: {e}")
 

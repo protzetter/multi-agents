@@ -1,68 +1,74 @@
 """
 Data Catalog Tool for Strands Agents
 
-This tool simulates access to a dictionary of data product metadata,
+This tool provides access to a dictionary of data product metadata,
 providing information about available data products including their
 attributes, location, format, and descriptions.
+
+Updated to match actual CSV files in the docs folder.
 """
 
 from typing import Dict, List, Optional, Any
 from strands import tool
 
 
-# Simulated data catalog with metadata for data products
+# Data catalog with metadata for data products based on actual CSV files in docs folder
 DATA_CATALOG = {
     "swiss_power_plants": {
-        "name": "Swiss Power Plants Registry",
-        "description": "Comprehensive list of all power generation facilities in Switzerland, including renewable and conventional energy sources",
+        "name": "Swiss Renewable Power Plants Registry",
+        "description": "Comprehensive list of renewable power generation facilities in Switzerland, including detailed information about capacity, location, technology, and operational details",
         "attributes": [
-            "plant_id",
-            "plant_name", 
-            "operator",
-            "location_canton",
-            "location_municipality",
-            "coordinates_lat",
-            "coordinates_lon",
-            "energy_source",
-            "technology_type",
-            "capacity_mw",
-            "commissioning_year",
-            "status",
-            "grid_connection_level"
+            "electrical_capacity",
+            "energy_source_level_1",
+            "energy_source_level_2", 
+            "energy_source_level_3",
+            "technology",
+            "data_source",
+            "nuts_1_region",
+            "nuts_2_region",
+            "nuts_3_region",
+            "lon",
+            "lat",
+            "municipality",
+            "municipality_code",
+            "postcode",
+            "address",
+            "canton",
+            "commissioning_date",
+            "contract_period_end",
+            "company",
+            "tariff",
+            "project_name",
+            "production"
         ],
-        "location": "s3://swiss-energy-data/power-plants/",
-        "format": "parquet",
-        "last_updated": "2024-12-01",
-        "record_count": 2847,
-        "data_owner": "Swiss Federal Office of Energy (SFOE)",
-        "update_frequency": "monthly"
+        "location": "docs/renewable_power_plants_CH_filtered.csv",
+        "format": "csv",
+        "last_updated": "2024-06-07",
+        "record_count": 12718,  # 12719 - 1 header row
+        "data_owner": "Swiss Federal Office of Energy (BFE)",
+        "update_frequency": "periodic"
     },
     "swiss_population": {
-        "name": "Swiss Population by Location and Year",
-        "description": "Historical and current population statistics for Switzerland by administrative divisions (cantons, districts, municipalities) with yearly granularity",
+        "name": "Swiss Population Historical Data by Administrative Division",
+        "description": "Historical population statistics for Switzerland from 1850 onwards, organized by administrative divisions (communes, districts, cantons) with detailed demographic breakdowns",
         "attributes": [
-            "year",
-            "canton_code",
-            "canton_name",
-            "district_code", 
-            "district_name",
-            "municipality_code",
-            "municipality_name",
-            "population_total",
-            "population_male",
-            "population_female",
-            "population_swiss",
-            "population_foreign",
-            "age_group_0_19",
-            "age_group_20_64",
-            "age_group_65_plus",
-            "area_km2",
-            "population_density"
+            "Année",  # Year
+            "No_commune",  # Municipality number
+            "Nom_commune",  # Municipality name
+            "No_district",  # District number
+            "Nom_district",  # District name
+            "No_canton",  # Canton number
+            "Canton",  # Canton code
+            "Nom_canton",  # Canton name
+            "Numéro_historisation",  # Historization number
+            "Unité",  # Unit/Category
+            "Nombre",  # Count/Number
+            "OBS_STATUS"  # Observation status
         ],
-        "location": "s3://swiss-demographics/population/",
+        "location": "docs/su-f-01.01-vz1850-ge-01.csv",
         "format": "csv",
-        "last_updated": "2024-11-15",
-        "record_count": 156789,
+        "last_updated": "2024-06-08",
+        "record_count": 1297502,  # 1297503 - 1 header row
         "data_owner": "Swiss Federal Statistical Office (FSO)",
         "update_frequency": "annual"
     }

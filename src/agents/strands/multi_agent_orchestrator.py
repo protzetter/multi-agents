@@ -16,6 +16,7 @@ try:
     from src.agents.strands.document_processing_agent import document_agent
     from src.agents.strands.stock_info_agent import stock_agent
     from src.agents.strands.rag_agent import rag_agent
+    from src.agents.strands.data_catalog_agent import data_catalog_agent
 except ImportError:
     print("Warning: Some agent modules could not be imported. Make sure all required files exist.")
     # Create placeholder agents if imports fail
@@ -25,6 +26,7 @@ except ImportError:
     document_agent = Agent(system_prompt="Document processing placeholder")
     stock_agent = Agent(system_prompt="Stock information placeholder")
     rag_agent = Agent(system_prompt="Knowledge base placeholder")
+    data_catalog_agent = Agent(system_prompt="Data catalog placeholder")
 
 @tool
 def route_to_agent(query: str) -> dict:
@@ -41,17 +43,20 @@ def route_to_agent(query: str) -> dict:
     banking_keywords = ["account", "bank", "onboarding", "kyc", "customer", "deposit", "withdraw"]
     document_keywords = ["document", "passport", "statement", "extract", "validate", "pdf", "image"]
     stock_keywords = ["stock", "price", "market", "invest", "share", "dividend", "chart"]
+    data_catalog_keywords = ["data", "dataset", "catalog", "metadata", "attributes", "power plants", "population", "swiss", "data product"]
     
     # Count keyword matches for each agent type
     banking_score = sum(1 for keyword in banking_keywords if keyword in query.lower())
     document_score = sum(1 for keyword in document_keywords if keyword in query.lower())
     stock_score = sum(1 for keyword in stock_keywords if keyword in query.lower())
+    data_catalog_score = sum(1 for keyword in data_catalog_keywords if keyword in query.lower())
     
     # Find the agent with the highest score
     scores = {
         "banking": banking_score,
         "document": document_score,
-        "stock": stock_score
+        "stock": stock_score,
+        "data_catalog": data_catalog_score
     }
     
     max_score = max(scores.values())
@@ -91,6 +96,7 @@ orchestrator = Agent(
     - Banking Agent: Handles account opening, customer onboarding, and banking services
     - Document Agent: Processes and validates documents like passports and bank statements
     - Stock Agent: Provides stock information, analysis, and visualizations
+    - Data Catalog Agent: Helps discover and understand available data products and their metadata
     
     Use your tools to route queries and coordinate workflows between these agents.
     """
@@ -138,6 +144,9 @@ def process_with_orchestration(user_input, session_id=None):
     elif agent_type == "stock":
         response = stock_agent(user_input)
         agent_name = "Stock Agent"
+    elif agent_type == "data_catalog":
+        response = data_catalog_agent(user_input)
+        agent_name = "Data Catalog Agent"
     else:
         # Default to orchestrator for general queries
         response = orchestrator(user_input)
