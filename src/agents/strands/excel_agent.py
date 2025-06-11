@@ -1,5 +1,6 @@
 from strands import Agent
 from strands.models.bedrock import BedrockModel
+from strands.models.anthropic import AnthropicModel
 import os,sys
 from dotenv import load_dotenv
 
@@ -15,20 +16,36 @@ load_dotenv(config_path)
 
 region = os.environ.get('BEDROCK_REGION', 'us-east-1')        
 # Get model ID from environment variables or use default
-model= os.environ.get('BEDROCK_MODEL', 'amazon.nova-pro-v1:0')
-print('model:%s',model)
-# Create a BedrockModel
-bedrock_model = BedrockModel(
-    model_id=model,
-    region_name=region,
-    temperature=0.3,
+bedroc_model_id= os.environ.get('BEDROCK_MODEL', 'amazon.nova-pro-v1:0')
+anthropic_model_id = os.environ.get('ANTHROPIC_MODEL', 'claude-3-7-sonnet-20250219')
+
+# in case you have access to the Claude API
+key = os.getenv('ANTHROPIC_API_KEY')
+anthropic_model = AnthropicModel(
+    client_args={
+        "api_key": key,
+    },
+    # **model_config
+    max_tokens=1028,
+    model_id=anthropic_model_id,
+    params={
+        "temperature": 0.7,
+    }
 )
+model=anthropic_model
+print('model:%s',anthropic_model_id)
+# Create a BedrockModel
+#bedrock_model = BedrockModel(
+#    model_id=model,
+#    region_name=region,
+#    temperature=0.3,
+#)
 
 
 
 # Create the Excel analysis agent
 excel_agent = Agent(
-    model=bedrock_model,
+    model=model,
     tools=[read_csv_file],
     system_prompt="""
     You are an Excel data analysis assistant specialized in interpreting and visualizing spreadsheet data.

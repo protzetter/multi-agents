@@ -2,6 +2,21 @@ from strands import tool
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, Optional, List
+import os
+import sys
+
+# Add the project root to the path so we can import our agents
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+# Import the excel agent (lazy import to avoid circular dependencies)
+def get_excel_agent():
+    """Lazy import of excel agent to avoid circular dependencies."""
+    try:
+        from agents.strands.excel_agent import excel_agent
+        return excel_agent
+    except ImportError as e:
+        print(f"Warning: Could not import excel_agent: {e}")
+        return None
 
 
 @tool
@@ -125,3 +140,76 @@ def read_csv_file(file_path: str, delimiter: str = ',', encoding: str = 'utf-8')
         }
     except Exception as e:
         return {"error": f"Failed to read CSV file: {str(e)}"}
+
+
+@tool
+def analyze_with_excel_agent(query: str, file_path: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Use the specialized Excel agent to analyze data and answer questions.
+    
+    This tool provides access to a specialized Excel analysis agent that can:
+    - Read and interpret Excel/CSV files
+    - Analyze data patterns and trends
+    - Generate insights and visualizations
+    - Answer natural language questions about data
+    - Provide business-friendly explanations
+    
+    Args:
+        query: The question or analysis request for the Excel agent
+        file_path: Optional path to Excel/CSV file to analyze
+        
+    Returns:
+        dict: Response from the Excel agent with analysis results
+    """
+    try:
+        # Get the excel agent
+        excel_agent = get_excel_agent()
+        
+        if excel_agent is None:
+            return {
+                "error": "Excel agent is not available",
+                "message": "Could not load the Excel analysis agent. Please check the agent configuration."
+            }
+        
+        # Construct the query for the agent
+        if file_path:
+            full_query = f"Please analyze the file at '{file_path}' and answer this question: {query}"
+        else:
+            full_query = query
+        
+        # Get response from the excel agent
+        response = excel_agent(full_query)
+        
+        # Extract the message content
+        if hasattr(response, 'message'):
+            if isinstance(response.message, dict) and 'content' in response.message:
+                # Handle structured message format
+                content = response.message['content']
+                if isinstance(content, list) and len(content) > 0:
+                    message_text = content[0].get('text', str(response.message))
+                else:
+                    message_text = str(content)
+            else:
+                # Handle simple string message
+                message_text = str(response.message)
+        else:
+            message_text = str(response)
+        
+        return {
+            "status": "success",
+            "query": query,
+            "file_path": file_path,
+            "analysis": message_text,
+            "agent": "Excel Analysis Agent",
+            "message": "Analysis completed successfully"
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": f"Failed to analyze with Excel agent: {str(e)}",
+            "query": query,
+            "file_path": file_path,
+            "message": "Analysis failed due to an error"
+        }
+

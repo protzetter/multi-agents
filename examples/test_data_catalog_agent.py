@@ -11,6 +11,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from agents.strands.data_catalog_agent import data_catalog_agent, orchestrate_data_catalog_query
+from agents.strands.excel_agent import excel_agent
 
 
 def test_data_catalog_agent():

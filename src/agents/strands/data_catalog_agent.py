@@ -14,7 +14,7 @@ from tools.data_catalog_tool import (
     list_data_products,
     get_data_product_location
 )
-from tools.excel_tools_strands import read_csv_file
+from tools.excel_tools_strands import read_csv_file,analyze_with_excel_agent
 
 # Load environment variables
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../config/.env')
@@ -27,26 +27,26 @@ anthropic_model_id = os.environ.get('ANTHROPIC_MODEL', 'claude-3-7-sonnet-202502
 print('model: %s', anthropic_model_id)
 
 # inb case you have access to the Claude API
-key = os.getenv('ANTHROPIC_API_KEY')
-anthropic_model = AnthropicModel(
-    client_args={
-        "api_key": key,
-    },
-    # **model_config
-    max_tokens=1028,
-    model_id=anthropic_model_id,
-    params={
-        "temperature": 0.7,
-    }
-)
-model=anthropic_model
-# Create a BedrockModel
-# bedrock_model = BedrockModel(
-#     model_id=bedrock_model_id,
-#     region_name=region,
-#     temperature=0.3,
+# key = os.getenv('ANTHROPIC_API_KEY')
+# anthropic_model = AnthropicModel(
+#     client_args={
+#         "api_key": key,
+#     },
+#     # **model_config
+#     max_tokens=1028,
+#     model_id=anthropic_model_id,
+#     params={
+#         "temperature": 0.7,
+#     }
 # )
-# model=bedrock_model
+# model=anthropic_model
+# Create a BedrockModel
+bedrock_model = BedrockModel(
+    model_id=bedrock_model_id,
+    region_name=region,
+    temperature=0.3,
+)
+model=bedrock_model
 # Create the Data Catalog agent
 data_catalog_agent = Agent(
     model=model,
@@ -55,7 +55,7 @@ data_catalog_agent = Agent(
         get_data_product_attributes,
         list_data_products,
         get_data_product_location,
-        read_csv_file
+        analyze_with_excel_agent
     ],
     system_prompt="""
     You are a Data Catalog Assistant specialized in helping users discover, understand, and access data products.
