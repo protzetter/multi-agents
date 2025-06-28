@@ -9,14 +9,17 @@ import logging
 from typing import Dict, Any, Optional, List
 
 # Add the project root to the path so we can import our modules
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+#sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+# Add the project root to the path so we can import our agents
+project_root="/Users/patrickrotzetter/Library/CloudStorage/OneDrive-Personal/Documents/dev/multi-agents/"
+sys.path.append(project_root)
 
 # Import the MCP server library
 from mcp.server.fastmcp import FastMCP
 # Initialize FastMCP server
 mcp = FastMCP("excel")
 # Import the Excel tools
-from src.tools.excel_tools_strands import read_excel_file, read_csv_file
+from src.tools.excel_tools_strands import read_excel_file, read_csv_file, analyze_with_excel_agent
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -157,6 +160,33 @@ def get_column_stats(file_path: str, column_name: str, sheet_name: Optional[str]
         error_msg = f"Failed to get column stats: {str(e)}"
         logger.error(error_msg)
         return {"error": error_msg}
+    
+
+@mcp.tool()
+def analyze_excel_file(query: str, file_path:str) -> Dict[str, Any]:
+    """
+    Analyze an Excel file using the specialized Excel agent.
+
+    Args:
+        query: The analysis query
+        file_path: Optional path to the Excel file
+
+    Returns:
+        dict: Dictionary containing the analysis results
+    """
+    logger.info(f"Analyzing Excel file: {file_path}")
+
+    try:
+        # Call the underlying tool
+        result = analyze_with_excel_agent(query, file_path)
+
+        return result
+    except Exception as e:
+        error_msg = f"Failed to analyze Excel file: {str(e)}"
+        logger.error(error_msg)
+        print(error_msg,file=sys.stderr)
+        return {"error": error_msg}
+    
 
 if __name__ == "__main__":
     # Run the server

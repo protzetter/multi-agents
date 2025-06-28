@@ -32,7 +32,6 @@ anthropic_model = AnthropicModel(
         "api_key": key,
     },
     # **model_config
-    max_tokens=1028,
     model_id=ant_model,
     params={
         "temperature": 0.7,
@@ -40,11 +39,11 @@ anthropic_model = AnthropicModel(
 )
 bedrock_model=BedrockModel(
     region_name=region,
-    max_tokens=1028,
     model_id=model,
     params={
         "temperature": 0.7,
-    }
+    },
+    cache_prompt="default"
 )
 @tool
 def get_stock_data(symbol: str) -> Dict[str, Any]:
@@ -260,7 +259,7 @@ def search_stocks(query: str, limit: int = 5) -> List[Dict[str, Any]]:
 
 # Create the stock information agent
 stock_agent = Agent(
-    model=anthropic_model,
+    model=bedrock_model,
     tools=[get_stock_data, compare_stocks, get_market_overview, generate_stock_chart_code, search_stocks,],
     system_prompt="""
     You are a stock information assistant specialized in financial analysis and visualization.
@@ -285,39 +284,24 @@ stock_agent = Agent(
     """
 )
 
-async def stock_agent_streaming(query: str, callback: Callable = None):
+def ask_stock_agent(query: str):
     """
     Call the stock agent with streaming enabled.
     
     Args:
         query: User query about stocks
-        callback: Optional callback function to process streaming chunks
         
     Returns:
         The final response from the agent
     """
     try:
-        # First try with streaming
-        logger.info(f"Calling stock agent with streaming for query: {query}")
-        stock_agent(query, stream=True, callback=callback)
-           
+        logger.debug(f"Calling stock agent for query: {query}")
+        response =stock_agent(query)
+        return response   
     except Exception as e:
-        logger.error(f"Error in stock_agent_streaming: {str(e)}")
+        logger.error(f"Error in ask_stock_agent: {str(e)}")
         # Return a simple dict that mimics the structure expected by the UI
         error_response = {"content": [{"text": f"Error processing request: {str(e)}"}]}
-        
-        # If we have a callback, call it with the error response
-        if callback:
-            try:
-                # Create a simple object with the expected structure
-                class ErrorChunk:
-                    def __init__(self, text):
-                        self.content = [type('obj', (object,), {'text': text})]
-                
-                callback(ErrorChunk(f"Error processing request: {str(e)}"))
-            except Exception as callback_error:
-                logger.error(f"Error in callback: {str(callback_error)}")
-        
         return error_response
 
 # Example usage
@@ -333,10 +317,6 @@ if __name__ == "__main__":
             
         # Example of streaming output
         print("\nAssistant: ", end="", flush=True)
-        
-        def print_chunk(chunk):
-            if chunk and hasattr(chunk, 'content') and chunk.content:
-                print(chunk.content[0].text, end="", flush=True)
-        
-        asyncio.run(stock_agent_streaming(user_input, callback=print_chunk))
+       
+        ask_stock_agent(user_input)
         print()  # Add a newline at the end

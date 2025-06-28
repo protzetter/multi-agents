@@ -6,7 +6,10 @@ import os
 import sys
 
 # Add the project root to the path so we can import our agents
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+project_root="/Users/patrickrotzetter/Library/CloudStorage/OneDrive-Personal/Documents/dev/multi-agents/src"
+# Add the project root to the path so we can import our modules
+#project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(project_root)
 
 # Import the excel agent (lazy import to avoid circular dependencies)
 def get_excel_agent():

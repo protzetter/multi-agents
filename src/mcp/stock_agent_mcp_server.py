@@ -18,7 +18,7 @@ from src.utils.finance.yahoo_finance import yahoo_finance
 
 from mcp.server.fastmcp import FastMCP
 
-from src.agents.strands.stock_info_agent import stock_agent, stock_agent_streaming
+from src.agents.strands.stock_info_agent import stock_agent
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -45,7 +45,7 @@ def ask_stock_agent(query: str) -> Dict[str, Any]:
     
     # Call the stock agent with the query
     try:
-        response = stock_agent(query,streaming=False)
+        response = stock_agent(query)
             
         # Return the response in a structured format
         if hasattr(response, 'message') and isinstance(response.message, str):
@@ -76,4 +76,4 @@ def ask_stock_agent(query: str) -> Dict[str, Any]:
 if __name__ == "__main__":
     
     print("Starting Stock Agent MCP Server...")
-    mcp.run(transport="sse")
+    mcp.run()

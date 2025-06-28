@@ -14,7 +14,17 @@ from .data_catalog_tool import (
 from .excel_tools_strands import (
     read_excel_file,
     read_csv_file,
-    analyze_with_excel_agent
+    analyze_with_excel_agent,
+    get_excel_agent_capabilities
+)
+
+from .stock_info_tool import (
+    analyze_with_stock_agent,
+    get_stock_price,
+    compare_multiple_stocks,
+    get_market_overview,
+    search_stocks_by_name,
+    get_stock_agent_capabilities
 )
 
 __all__ = [
@@ -27,5 +37,12 @@ __all__ = [
     "read_excel_file",
     "read_csv_file",
     "analyze_with_excel_agent",
-    "get_excel_agent_capabilities"
+    "get_excel_agent_capabilities",
+    # Stock info tools
+    "analyze_with_stock_agent",
+    "get_stock_price",
+    "compare_multiple_stocks",
+    "get_market_overview",
+    "search_stocks_by_name",
+    "get_stock_agent_capabilities"
 ]
