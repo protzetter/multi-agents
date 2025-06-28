@@ -304,27 +304,105 @@ class YahooFinanceClient:
             List of matching stocks
         """
         try:
-            # This is a simple implementation since yfinance doesn't have a direct search function
-            # For a production system, you might want to use a more robust solution
-            tickers = yf.Tickers(query)
             results = []
             
-            # Try to get info for the exact ticker match
+            # First, try to treat the query as a direct ticker symbol
             try:
-                info = tickers.tickers[query].info
-                results.append({
-                    'symbol': query,
-                    'name': info.get('shortName', 'N/A'),
-                    'exchange': info.get('exchange', 'N/A'),
-                    'type': 'Exact Match'
-                })
-            except:
-                pass
+                ticker_upper = query.upper().strip()
+                stock = yf.Ticker(ticker_upper)
+                info = stock.info
+                
+                # Check if we got valid info (basic validation)
+                if info and len(info) > 5 and info.get('shortName'):
+                    results.append({
+                        'symbol': ticker_upper,
+                        'name': info.get('shortName', 'N/A'),
+                        'exchange': info.get('exchange', 'N/A'),
+                        'type': 'Direct Ticker Match',
+                        'sector': info.get('sector', 'N/A'),
+                        'industry': info.get('industry', 'N/A')
+                    })
+            except Exception as e:
+                logger.debug(f"Direct ticker search failed for '{query}': {e}")
             
-            # For a more comprehensive search, you would need to use a different API
-            # or maintain your own database of ticker symbols and company names
+            # If we found a direct match, return it
+            if results:
+                return results[:limit]
             
-            return results[:limit]
+            # If no direct ticker match, try some common variations
+            # This is a simple approach - for production, you'd want a proper search API
+            common_tickers = {
+                'apple': 'AAPL',
+                'microsoft': 'MSFT', 
+                'google': 'GOOGL',
+                'alphabet': 'GOOGL',
+                'amazon': 'AMZN',
+                'tesla': 'TSLA',
+                'meta': 'META',
+                'facebook': 'META',
+                'netflix': 'NFLX',
+                'nvidia': 'NVDA',
+                'intel': 'INTC',
+                'amd': 'AMD',
+                'ibm': 'IBM',
+                'oracle': 'ORCL',
+                'salesforce': 'CRM',
+                'adobe': 'ADBE',
+                'paypal': 'PYPL',
+                'visa': 'V',
+                'mastercard': 'MA',
+                'jpmorgan': 'JPM',
+                'goldman': 'GS',
+                'morgan stanley': 'MS',
+                'bank of america': 'BAC',
+                'wells fargo': 'WFC',
+                'coca cola': 'KO',
+                'pepsi': 'PEP',
+                'walmart': 'WMT',
+                'target': 'TGT',
+                'home depot': 'HD',
+                'lowes': 'LOW',
+                'disney': 'DIS',
+                'boeing': 'BA',
+                'caterpillar': 'CAT',
+                'general electric': 'GE',
+                'ford': 'F',
+                'general motors': 'GM',
+                'exxon': 'XOM',
+                'chevron': 'CVX',
+                'johnson': 'JNJ',
+                'pfizer': 'PFE',
+                'merck': 'MRK',
+                'abbvie': 'ABBV'
+            }
+            
+            query_lower = query.lower().strip()
+            
+            # Look for partial matches in company names
+            for company_name, ticker in common_tickers.items():
+                if query_lower in company_name or company_name in query_lower:
+                    try:
+                        stock = yf.Ticker(ticker)
+                        info = stock.info
+                        
+                        if info and info.get('shortName'):
+                            results.append({
+                                'symbol': ticker,
+                                'name': info.get('shortName', 'N/A'),
+                                'exchange': info.get('exchange', 'N/A'),
+                                'type': 'Name Match',
+                                'sector': info.get('sector', 'N/A'),
+                                'industry': info.get('industry', 'N/A')
+                            })
+                            
+                            if len(results) >= limit:
+                                break
+                                
+                    except Exception as e:
+                        logger.debug(f"Error fetching info for {ticker}: {e}")
+                        continue
+            
+            return results[:limit] if results else []
             
         except Exception as e:
             logger.error(f"Error searching for stocks with query '{query}': {str(e)}")
