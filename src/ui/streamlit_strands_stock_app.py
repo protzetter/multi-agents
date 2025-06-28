@@ -335,6 +335,34 @@ def search_stocks(query: str):
     with st.spinner(f"Searching for '{query}'..."):
         try:
             # Get raw search results first
+            results = []
+            try:
+                search_results = yahoo_finance.search_stocks(query)
+                if isinstance(search_results, list):
+                    # Filter out error results
+                    results = [r for r in search_results if isinstance(r, dict) and 'error' not in r]
+                    
+                    # If no results from search, try treating the query as a direct ticker
+                    if not results:
+                        try:
+                            # Try to get stock info directly (in case it's a valid ticker)
+                            direct_info = yahoo_finance.get_stock_info(query.upper())
+                            if direct_info and 'error' not in direct_info:
+                                results = [{
+                                    'symbol': direct_info.get('symbol', query.upper()),
+                                    'name': direct_info.get('name', 'N/A'),
+                                    'exchange': direct_info.get('exchange', 'N/A'),
+                                    'type': 'Direct Match'
+                                }]
+                        except Exception as e:
+                            logger.debug(f"Direct ticker lookup failed for {query}: {e}")
+                            
+                elif isinstance(search_results, dict) and 'error' in search_results:
+                    logger.warning(f"Search error: {search_results['error']}")
+                    results = []
+            except Exception as e:
+                logger.warning(f"Could not search stocks: {e}")
+                results = []
             
             # Use the Strands agent to search for stocks
             query_text = f"Search for stocks matching: {query}"
