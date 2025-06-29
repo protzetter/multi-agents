@@ -19,7 +19,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 try:
     # Import the Strands Stock Information Agent
     from src.agents.strands.stock_info_agent import ask_stock_agent
-    from src.utils.finance.yahoo_finance import yahoo_finance
 except ImportError as e:
     st.error(f"Import error: {e}")
     st.error("Please ensure the required modules are available in the project structure.")
@@ -28,9 +27,6 @@ except ImportError as e:
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Load environment variables
-load_dotenv(os.path.join(os.path.dirname(__file__), '../../config/.env'))
 
 # Initialize session state variables if they don't exist
 def init_session_state():
