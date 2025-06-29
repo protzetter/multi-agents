@@ -70,7 +70,14 @@ multi-agents/
 │   │   ├── claude/      # Claude API-based agents
 │   │   ├── simpleagents/  # Simple Language Model Agents
 │   │   └── strands/     # Strands SDK-based agents
+│   │       ├── electricity_agent.py    # European electricity market agent
+│   │       └── stock_info_agent.py     # Stock market agent
+│   ├── tools/           # Strands tools for agents
+│   │   ├── entsoe_tool.py              # ENTSOE API tools
+│   │   ├── electricity_agent_tool.py   # Electricity agent wrapper tools
+│   │   └── stock_info_tool.py          # Stock info tools
 │   ├── ui/              # User interface implementations
+│   │   └── streamlit_strands_stock_app.py  # Stock analysis UI
 │   └── utils/           # Utility functions
 │       ├── db/          # Database utilities
 │       ├── document_processing/ # Document processing utilities
@@ -95,6 +102,7 @@ Or run individual agents:
 from src.agents.strands.banking_onboarding_agent import orchestrate_onboarding
 from src.agents.strands.document_processing_agent import document_agent
 from src.agents.strands.stock_info_agent import stock_agent
+from src.agents.strands.electricity_agent import ask_electricity_agent
 from src.agents.strands.rag_agent import rag_agent
 from src.agents.strands.multi_agent_orchestrator import process_with_orchestration
 
@@ -105,9 +113,11 @@ print(f"[{response['agent']}]: {response['response']}")
 # Or use a specific agent directly
 response = stock_agent("Compare AAPL, MSFT, and GOOGL")
 print(response.message)
+
 ```
 
 For more details, see the [Strands Getting Started Guide](docs/strands_getting_started.md).
+
 
 ### Banking Onboarding Agent
 
@@ -230,17 +240,218 @@ Or directly with Streamlit:
 # Strands multi-agent app
 streamlit run src/ui/streamlit_strands_app.py
 
-# Full-featured stock app
-streamlit run src/ui/streamlit_stock_app.py
+# Full-featured stock app with electricity integration
+streamlit run src/ui/streamlit_strands_stock_app.py
 
 # Lightweight SimpleAgent app
 streamlit run src/ui/streamlit_simpleagent_app.py
+```
+
+## Key Features
+
+### 🏦 Banking & Finance
+- **Banking Onboarding**: Automated customer onboarding with document validation
+- **Stock Market Analysis**: Real-time stock data, comparison, and visualization
+- **Financial Document Processing**: PDF passport detection and validation
+
+### ⚡ Energy Markets
+- **European Electricity Markets**: Real-time analysis of 17 European countries
+- **Load Forecasting**: Electricity consumption analysis and predictions
+- **Price Analysis**: Day-ahead market price tracking and volatility analysis
+- **Cross-Border Flows**: Inter-country electricity trade analysis
+- **Renewable Integration**: Wind and solar generation forecasting
+- **Market Insights**: Comprehensive electricity market intelligence
+
+### 🤖 Multi-Agent Orchestration
+- **Intelligent Routing**: Automatic query routing to specialized agents
+- **Agent Coordination**: Seamless communication between different agent types
+- **Tool Integration**: Extensive tool ecosystem for data access and analysis
+- **Streaming Responses**: Real-time response generation and display
+
+### 📊 Data Integration
+- **Yahoo Finance**: Stock market data and financial information
+- **ENTSOE API**: European electricity market transparency data
+- **Document Processing**: PDF analysis and validation
+- **Vector Databases**: ChromaDB for RAG implementations
+
+## Agent Capabilities
+
+### Stock Information Agent
+- Real-time stock prices and historical data
+- Multi-stock comparison and analysis
+- Market overview and trends
+- Financial ratio analysis
+- Stock chart generation
+- News integration
+
+### Document Processing Agent
+- PDF document validation
+- Passport detection and verification
+- Text extraction and analysis
+- Document classification
+
+### Banking Onboarding Agent
+- Customer information collection
+- Document verification workflow
+- Regulatory compliance checking
+- Multi-step process orchestration
+
+## API Integrations & Data Sources
+
+### Financial Data
+- **Yahoo Finance API**: Real-time and historical stock data
+  - Stock prices, market cap, P/E ratios
+  - Historical price data and charts
+  - Company news and financial metrics
+  - Market indices and sector information
+
+### LLM Providers
+- **AWS Bedrock**: Amazon's managed AI service
+  - Nova Pro, Claude, and other foundation models
+  - Streaming responses and caching
+- **Anthropic Claude**: Direct API integration
+- **OpenAI**: GPT models for various tasks
+- **HuggingFace**: Open-source model integration
+
+## Tools Ecosystem
+
+### Strands Tools (22 total)
+
+#### Stock Market Tools (6 tools)
+- `analyze_with_stock_agent()` - Main stock agent interface
+- `get_stock_price()` - Real-time stock prices
+- `compare_multiple_stocks()` - Multi-stock comparison
+- `get_market_overview()` - Market indices and trends
+- `search_stocks_by_name()` - Stock search functionality
+- `get_stock_agent_capabilities()` - Agent capabilities info
+
+#### Document & Data Tools (7 tools)
+- `search_data_catalog()` - Data product search
+- `get_data_product_attributes()` - Product metadata
+- `list_data_products()` - Available products
+- `get_data_product_location()` - Data locations
+- `read_excel_file()` - Excel file processing
+- `read_csv_file()` - CSV file processing
+- `analyze_with_excel_agent()` - Excel analysis agent
+
+## Environment Variables
+
+Required environment variables for full functionality:
+
+```bash
+# LLM API Keys
+ANTHROPIC_API_KEY=your_anthropic_key
+OPENAI_API_KEY=your_openai_key
+HF_API_TOKEN=your_huggingface_token
+
+# AWS Configuration
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=your_aws_region
+BEDROCK_REGION=us-east-1
+BEDROCK_MODEL=us.amazon.nova-pro-v1:0
+
+
+# Model Configuration
+ANTHROPIC_MODEL=claude-3-7-sonnet-20250219
+```
+
+## Performance & Scalability
+
+### Real-time Data Processing
+- **Stock Data**: Sub-second response times for market data
+- **Streaming Responses**: Progressive response generation for better UX
+
+### Caching & Optimization
+- **Bedrock Caching**: Prompt caching for improved performance
+- **Data Caching**: Intelligent caching of API responses
+- **Error Handling**: Robust error recovery and fallback mechanisms
+
+### Supported Scale
+- **Stock Markets**: Global stock exchanges via Yahoo Finance
+- **Concurrent Users**: Multi-user support with session management
+- **Data Points**: Handles thousands of data points per request
+
+## Quick Start Examples
+
+### 1. Stock Market Analysis
+```python
+# Get stock information
+from src.agents.strands.stock_info_agent import ask_stock_agent
+
+response = ask_stock_agent("Compare Apple, Microsoft, and Google stocks")
+print(response)
+```
+
+### 3. Multi-Agent Orchestration
+```python
+# Let the orchestrator route your query
+from src.agents.strands.multi_agent_orchestrator import process_with_orchestration
+
+response = process_with_orchestration("Compare electricity prices in Europe with stock market volatility")
+print(f"[{response['agent']}]: {response['response']}")
+```
+
+### 4. Direct Tool Usage
+```python
+# Use tools directly
+from src.tools.stock_info_tool import get_stock_price
+
+# Get Apple stock price
+stock_data = get_stock_price('AAPL')
+print(f"AAPL: ${stock_data['current_price']}")
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### AWS Credentials
+```bash
+# Error: "Unable to locate credentials"
+# Solution: Configure AWS credentials
+aws configure
+# or set environment variables
+export AWS_ACCESS_KEY_ID=your_key
+export AWS_SECRET_ACCESS_KEY=your_secret
+```
+
+#### Missing Dependencies
+```bash
+# Error: "ModuleNotFoundError"
+# Solution: Install all dependencies
+pip install -r requirements.txt
 ```
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+### Development Setup
+1. Fork the repository
+2. Create a feature branch
+3. Install development dependencies: `pip install -r requirements-dev.txt`
+4. Make your changes
+5. Run tests: `python -m pytest tests/`
+6. Submit a pull request
+
 ## License
 
 [Specify your license here]
+
+---
+
+## 📊 Data Sources & Credits
+
+- **Stock Data**: [Yahoo Finance](https://finance.yahoo.com/)
+- **LLM Models**: AWS Bedrock, Anthropic Claude, OpenAI GPT
+- **Framework**: [Strands SDK](https://strands.ai/)
+
+## 🔗 Related Projects
+
+- [Strands SDK Documentation](https://docs.strands.ai/)
+- [AWS Bedrock Documentation](https://docs.aws.amazon.com/bedrock/)
+
+---
+
+*Last updated: June 2025*
