@@ -10,7 +10,7 @@ setup(
         "chromadb>=0.4.0",
         "streamlit>=1.24.0",
         "chainlit>=0.7.0",
-        "pyautogen>=0.1.0",
+        "ag2>=0.1.0",
         "langchain>=0.0.267",
         "pandas>=2.0.0",
         "numpy>=1.24.0",
